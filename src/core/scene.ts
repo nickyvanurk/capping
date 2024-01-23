@@ -19,8 +19,8 @@ export class Scene {
     document.body.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(71, window.innerWidth / window.innerHeight, 0.1, 1000);
-    this.camera.position.set(5, 5, 5);
+    this.camera = new THREE.PerspectiveCamera(71, window.innerWidth / window.innerHeight, 0.1, 10000);
+    this.camera.position.set(1500, 1200, 1500);
 
     window.addEventListener('resize', this.handleResize.bind(this), false);
 
