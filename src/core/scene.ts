@@ -10,8 +10,6 @@ export class Scene {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
 
-  private cube: THREE.Mesh;
-
   constructor() {
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -28,15 +26,6 @@ export class Scene {
 
     // Clipping plane
     const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
-
-    // Green cube
-    const cubeMaterial = new THREE.MeshBasicMaterial({
-      color: 0x00ff00,
-      side: THREE.DoubleSide,
-      clippingPlanes: [plane],
-    });
-    this.cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), cubeMaterial);
-    this.scene.add(this.cube);
 
     // Test GUI
     const gui = new GUI();
