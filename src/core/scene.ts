@@ -18,17 +18,25 @@ export class Scene {
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(71, window.innerWidth / window.innerHeight, 0.1, 1000);
-    this.camera.position.set(5, 5, 5);
+    // this.camera.position.set(5, 5, 5);
+    // this.camera.position.set(0, 0, 5);
+    this.camera.position.z = 5;
 
     window.addEventListener('resize', this.handleResize.bind(this), false);
 
     new OrbitControls(this.camera, this.renderer.domElement);
 
     // Green cube
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    this.cube = new THREE.Mesh(geometry, material);
+    const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    this.cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), cubeMaterial);
     this.scene.add(this.cube);
+
+    // Plane
+    const planeGeo = new THREE.PlaneGeometry(100, 100);
+    planeGeo.rotateX(-Math.PI / 2);
+    const planeMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+    const plane = new THREE.Mesh(planeGeo, planeMaterial);
+    this.scene.add(plane);
 
     // Test GUI
     const gui = new GUI();
