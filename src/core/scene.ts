@@ -14,6 +14,7 @@ export class Scene {
   constructor() {
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.localClippingEnabled = true;
     document.body.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
@@ -24,17 +25,17 @@ export class Scene {
 
     new OrbitControls(this.camera, this.renderer.domElement);
 
+    // Clipping plane
+    const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
+
     // Green cube
-    const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const cubeMaterial = new THREE.MeshBasicMaterial({
+      color: 0x00ff00,
+      side: THREE.DoubleSide,
+      clippingPlanes: [plane],
+    });
     this.cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), cubeMaterial);
     this.scene.add(this.cube);
-
-    // Plane
-    const planeGeo = new THREE.PlaneGeometry(100, 100);
-    planeGeo.rotateX(-Math.PI / 2);
-    const planeMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
-    const plane = new THREE.Mesh(planeGeo, planeMaterial);
-    this.scene.add(plane);
 
     // Test GUI
     const gui = new GUI();
@@ -46,7 +47,7 @@ export class Scene {
       .add(config, 'clippingPlaneHeight', -10, 10, 0.01)
       .name('Clipping Plane')
       .onChange((value: number) => {
-        plane.position.y = value;
+        plane.constant = value;
       });
   }
 
