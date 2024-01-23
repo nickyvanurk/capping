@@ -38,15 +38,11 @@ export class Scene {
       clippingPlaneHeight: plane.constant,
     };
 
-    const axisHelper = new THREE.AxesHelper(2);
-    this.scene.add(axisHelper);
-
     gui
       .add(config, 'clippingPlaneHeight', -2000, 2000, 0.01)
       .name('Clipping Plane')
       .onChange((value: number) => {
         plane.constant = value;
-        axisHelper.position.y = value;
       });
 
     const fbxLoader = new FBXLoader();
