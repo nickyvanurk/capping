@@ -24,6 +24,10 @@ export class Scene {
 
     new OrbitControls(this.camera, this.renderer.domElement);
 
+    // Light
+    const ambientLight = new THREE.AmbientLight();
+    this.scene.add(ambientLight);
+
     // Clipping plane
     const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
     plane.constant = 400;
