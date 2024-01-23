@@ -26,11 +26,12 @@ export class Scene {
 
     // Clipping plane
     const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
+    plane.constant = 400;
 
     // Test GUI
     const gui = new GUI();
     const config = {
-      clippingPlaneHeight: 0,
+      clippingPlaneHeight: plane.constant,
     };
 
     const axisHelper = new THREE.AxesHelper(2);
