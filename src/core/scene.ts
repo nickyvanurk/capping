@@ -1,6 +1,7 @@
 import GUI from 'lil-gui';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 
 import '@ui/style.css';
 
@@ -53,6 +54,18 @@ export class Scene {
         plane.constant = value;
         axisHelper.position.y = value;
       });
+
+    const fbxLoader = new FBXLoader();
+    fbxLoader.load(
+      '/house.fbx',
+      (object) => this.scene.add(object),
+      (xhr) => {
+        console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
+      },
+      (error) => {
+        console.log(error);
+      }
+    );
   }
 
   render() {
