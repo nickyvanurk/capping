@@ -18,9 +18,7 @@ export class Scene {
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(71, window.innerWidth / window.innerHeight, 0.1, 1000);
-    // this.camera.position.set(5, 5, 5);
-    // this.camera.position.set(0, 0, 5);
-    this.camera.position.z = 5;
+    this.camera.position.set(5, 5, 5);
 
     window.addEventListener('resize', this.handleResize.bind(this), false);
 
@@ -45,10 +43,10 @@ export class Scene {
     };
 
     gui
-      .add(config, 'clippingPlaneHeight', -100, 100, 2)
+      .add(config, 'clippingPlaneHeight', -10, 10, 0.01)
       .name('Clipping Plane')
       .onChange((value: number) => {
-        console.log(value);
+        plane.position.y = value;
       });
   }
 
