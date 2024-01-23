@@ -48,7 +48,7 @@ export class Scene {
     this.scene.add(axisHelper);
 
     gui
-      .add(config, 'clippingPlaneHeight', -10, 10, 0.01)
+      .add(config, 'clippingPlaneHeight', -2000, 2000, 0.01)
       .name('Clipping Plane')
       .onChange((value: number) => {
         plane.constant = value;
@@ -58,7 +58,18 @@ export class Scene {
     const fbxLoader = new FBXLoader();
     fbxLoader.load(
       '/house.fbx',
-      (object) => this.scene.add(object),
+      (object) => {
+        console.log(object);
+        object.traverse(function (child) {
+          if ((child as THREE.Mesh).material) {
+            (child as THREE.Mesh).material = new THREE.MeshStandardMaterial({
+              clippingPlanes: [plane],
+              side: THREE.DoubleSide,
+            });
+          }
+        });
+        this.scene.add(object);
+      },
       (xhr) => {
         console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
       },
