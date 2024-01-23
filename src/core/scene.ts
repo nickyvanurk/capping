@@ -32,6 +32,56 @@ export class Scene {
     const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
     plane.constant = 400;
 
+    // Stencil
+    // PASS 1
+    // everywhere that the back faces are visible (clipped region) the stencil
+    // buffer is incremented by 1.
+    const backFaceStencilMat = new THREE.MeshBasicMaterial();
+    backFaceStencilMat.depthWrite = false;
+    backFaceStencilMat.depthTest = false;
+    backFaceStencilMat.colorWrite = false;
+    backFaceStencilMat.stencilWrite = true;
+    backFaceStencilMat.stencilFunc = THREE.AlwaysStencilFunc;
+    backFaceStencilMat.side = THREE.BackSide;
+    backFaceStencilMat.stencilFail = THREE.IncrementWrapStencilOp;
+    backFaceStencilMat.stencilZFail = THREE.IncrementWrapStencilOp;
+    backFaceStencilMat.stencilZPass = THREE.IncrementWrapStencilOp;
+
+    // PASS 2
+    // everywhere that the front faces are visible the stencil
+    // buffer is decremented back to 0.
+    const frontFaceStencilMat = new THREE.MeshBasicMaterial();
+    backFaceStencilMat.depthWrite = false;
+    backFaceStencilMat.depthTest = false;
+    frontFaceStencilMat.colorWrite = false;
+    frontFaceStencilMat.stencilWrite = true;
+    frontFaceStencilMat.stencilFunc = THREE.AlwaysStencilFunc;
+    frontFaceStencilMat.side = THREE.FrontSide;
+    frontFaceStencilMat.stencilFail = THREE.DecrementWrapStencilOp;
+    frontFaceStencilMat.stencilZFail = THREE.DecrementWrapStencilOp;
+    frontFaceStencilMat.stencilZPass = THREE.DecrementWrapStencilOp;
+
+    // PASS 3
+    // draw the plane everywhere that the stencil buffer != 0, which will
+    // only be in the clipped region where back faces are visible.
+    const planeStencilMat = new THREE.MeshNormalMaterial();
+    planeStencilMat.stencilWrite = true;
+    planeStencilMat.stencilRef = 0;
+    planeStencilMat.stencilFunc = THREE.NotEqualStencilFunc;
+    planeStencilMat.stencilFail = THREE.ReplaceStencilOp;
+    planeStencilMat.stencilZFail = THREE.ReplaceStencilOp;
+    planeStencilMat.stencilZPass = THREE.ReplaceStencilOp;
+
+    frontFaceStencilMat.clippingPlanes = [plane];
+    backFaceStencilMat.clippingPlanes = [plane];
+
+    const planeGeom = new THREE.PlaneGeometry();
+    const planeMesh = new THREE.Mesh(planeGeom, planeStencilMat);
+    planeMesh.scale.setScalar(100000);
+    planeMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), plane.normal);
+    planeMesh.renderOrder = 2;
+    this.scene.add(planeMesh);
+
     // Test GUI
     const gui = new GUI();
     const config = {
@@ -43,19 +93,50 @@ export class Scene {
       .name('Clipping Plane')
       .onChange((value: number) => {
         plane.constant = value;
+        planeMesh.position.y = value;
       });
+
+    const material = new THREE.MeshStandardMaterial({
+      clippingPlanes: [plane],
+      side: THREE.DoubleSide,
+    });
+
+    planeMesh.onAfterRender = (renderer: THREE.WebGLRenderer) => {
+      renderer.clearStencil();
+    };
+
+    const scene = this.scene;
 
     const fbxLoader = new FBXLoader();
     fbxLoader.load(
       '/house.fbx',
       (object) => {
-        console.log(object);
         object.traverse(function (child) {
-          if ((child as THREE.Mesh).material) {
-            (child as THREE.Mesh).material = new THREE.MeshStandardMaterial({
-              clippingPlanes: [plane],
-              side: THREE.DoubleSide,
-            });
+          if ((child as THREE.Mesh).isMesh) {
+            const mesh = child as THREE.Mesh;
+
+            // Hide terrain
+            if (mesh.name.includes('Revit')) {
+              mesh.visible = false;
+            }
+
+            const backMesh = mesh.clone();
+            backMesh.material = backFaceStencilMat;
+            backMesh.renderOrder = 1;
+            scene.add(backMesh);
+
+            const frontMesh = mesh.clone();
+            frontMesh.material = frontFaceStencilMat;
+            frontMesh.renderOrder = 1;
+            scene.add(frontMesh);
+
+            if (mesh.material) {
+              mesh.material = material;
+
+              // mesh.onAfterRender = (renderer: THREE.WebGLRenderer) => {
+              //   renderer.clearStencil();
+              // };
+            }
           }
         });
         this.scene.add(object);
@@ -81,3 +162,40 @@ export class Scene {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 }
+
+// function createPlaneStencilGroup(geometry: THREE.BufferGeometry, plane: THREE.Plane, renderOrder: number) {
+//   const group = new THREE.Group();
+//   const baseMat = new THREE.MeshBasicMaterial();
+//   baseMat.depthWrite = false;
+//   baseMat.depthTest = false;
+//   baseMat.colorWrite = false;
+//   baseMat.stencilWrite = true;
+//   baseMat.stencilFunc = THREE.AlwaysStencilFunc;
+
+//   // back faces
+//   const mat0 = baseMat.clone();
+//   mat0.side = THREE.BackSide;
+//   mat0.clippingPlanes = [plane];
+//   mat0.stencilFail = THREE.IncrementWrapStencilOp;
+//   mat0.stencilZFail = THREE.IncrementWrapStencilOp;
+//   mat0.stencilZPass = THREE.IncrementWrapStencilOp;
+
+//   const mesh0 = new THREE.Mesh(geometry, mat0);
+//   mesh0.renderOrder = renderOrder;
+//   group.add(mesh0);
+
+//   // front faces
+//   const mat1 = baseMat.clone();
+//   mat1.side = THREE.FrontSide;
+//   mat1.clippingPlanes = [plane];
+//   mat1.stencilFail = THREE.DecrementWrapStencilOp;
+//   mat1.stencilZFail = THREE.DecrementWrapStencilOp;
+//   mat1.stencilZPass = THREE.DecrementWrapStencilOp;
+
+//   const mesh1 = new THREE.Mesh(geometry, mat1);
+//   mesh1.renderOrder = renderOrder;
+
+//   group.add(mesh1);
+
+//   return group;
+// }
