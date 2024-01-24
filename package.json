@@ -24,6 +24,7 @@
     "vite": "^4.4.5"
   },
   "dependencies": {
-    "three": "^0.155.0"
+    "three": "^0.155.0",
+    "three-halfedge-dcel": "^1.0.2"
   }
 }

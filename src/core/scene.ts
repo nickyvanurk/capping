@@ -1,6 +1,9 @@
 import GUI from 'lil-gui';
 import * as THREE from 'three';
+import { Dcel } from 'three-halfedge-dcel';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { HalfEdge } from 'three/addons/math/ConvexHull.js';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 
 import '@ui/style.css';
@@ -79,7 +82,6 @@ export class Scene {
     const planeMesh = new THREE.Mesh(planeGeom, planeStencilMat);
     planeMesh.scale.setScalar(100000);
     planeMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), plane.normal);
-    planeMesh.renderOrder = 2;
     this.scene.add(planeMesh);
 
     // Test GUI
@@ -115,27 +117,34 @@ export class Scene {
           if ((child as THREE.Mesh).isMesh) {
             const mesh = child as THREE.Mesh;
 
-            // Hide terrain
-            if (mesh.name.includes('Revit')) {
-              mesh.visible = false;
+            try {
+              mesh.geometry = BufferGeometryUtils.mergeVertices(mesh.geometry);
+              const dcel = new Dcel(mesh.geometry);
+
+              // Skip non-manifold meshes
+              for (const f of dcel.faces) {
+                if (!f.edge.twin) {
+                  throw Error();
+                }
+              }
+
+              const backMesh = mesh.clone();
+              backMesh.material = backFaceStencilMat;
+              scene.add(backMesh);
+
+              const frontMesh = mesh.clone();
+              frontMesh.material = frontFaceStencilMat;
+              scene.add(frontMesh);
+            } catch (e) {
+              // console.log(e);
             }
-
-            const backMesh = mesh.clone();
-            backMesh.material = backFaceStencilMat;
-            backMesh.renderOrder = 1;
-            scene.add(backMesh);
-
-            const frontMesh = mesh.clone();
-            frontMesh.material = frontFaceStencilMat;
-            frontMesh.renderOrder = 1;
-            scene.add(frontMesh);
 
             if (mesh.material) {
               mesh.material = material;
 
-              // mesh.onAfterRender = (renderer: THREE.WebGLRenderer) => {
-              //   renderer.clearStencil();
-              // };
+              mesh.onAfterRender = (renderer: THREE.WebGLRenderer) => {
+                renderer.clearStencil();
+              };
             }
           }
         });
