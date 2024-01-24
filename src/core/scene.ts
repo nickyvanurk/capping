@@ -82,6 +82,10 @@ export class Scene {
     planeMesh.position.y = plane.constant;
     this.scene.add(planeMesh);
 
+    planeMesh.onAfterRender = (renderer: THREE.WebGLRenderer) => {
+      renderer.clearStencil();
+    };
+
     frontFaceStencilMat.clippingPlanes = [plane];
     backFaceStencilMat.clippingPlanes = [plane];
 
@@ -118,6 +122,10 @@ export class Scene {
           if ((child as THREE.Mesh).isMesh) {
             const mesh = child as THREE.Mesh;
 
+            if (mesh.material) {
+              mesh.material = material;
+            }
+
             try {
               mesh.geometry = BufferGeometryUtils.mergeVertices(mesh.geometry);
               const dcel = new Dcel(mesh.geometry);
@@ -130,22 +138,34 @@ export class Scene {
               }
 
               const backMesh = mesh.clone();
+              backMesh.geometry = backMesh.geometry.clone();
               backMesh.material = backFaceStencilMat;
               scene.add(backMesh);
 
+              backMesh.traverse(function (child) {
+                if ((child as THREE.Mesh).isMesh) {
+                  const mesh = child as THREE.Mesh;
+                  if (mesh.material) {
+                    mesh.material = backFaceStencilMat;
+                  }
+                }
+              });
+
               const frontMesh = mesh.clone();
+              frontMesh.geometry = frontMesh.geometry.clone();
               frontMesh.material = frontFaceStencilMat;
               scene.add(frontMesh);
+
+              frontMesh.traverse(function (child) {
+                if ((child as THREE.Mesh).isMesh) {
+                  const mesh = child as THREE.Mesh;
+                  if (mesh.material) {
+                    mesh.material = frontFaceStencilMat;
+                  }
+                }
+              });
             } catch (e) {
               // console.log(e);
-            }
-
-            if (mesh.material) {
-              mesh.material = material;
-
-              mesh.onAfterRender = (renderer: THREE.WebGLRenderer) => {
-                renderer.clearStencil();
-              };
             }
           }
         });
