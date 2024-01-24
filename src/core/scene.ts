@@ -74,6 +74,8 @@ export class Scene {
     planeStencilMat.stencilFail = THREE.ReplaceStencilOp;
     planeStencilMat.stencilZFail = THREE.ReplaceStencilOp;
     planeStencilMat.stencilZPass = THREE.ReplaceStencilOp;
+    planeStencilMat.polygonOffset = true;
+    planeStencilMat.polygonOffsetFactor = -10;
 
     const planeGeom = new THREE.PlaneGeometry();
     const planeMesh = new THREE.Mesh(planeGeom, planeStencilMat);
@@ -124,6 +126,18 @@ export class Scene {
 
             if (mesh.material) {
               mesh.material = material;
+
+              // if (Array.isArray(mesh.material)) {
+              //   for (let i = 0; i < mesh.material.length; i++) {
+              //     // mesh.material[i] = material;
+              //     mesh.material[i].clippingPlanes = [plane];
+              //     mesh.material[i].side = THREE.DoubleSide;
+              //   }
+              // } else {
+              //   // mesh.material = material;
+              //   mesh.material.clippingPlanes = [plane];
+              //   mesh.material.side = THREE.DoubleSide;
+              // }
             }
 
             try {
