@@ -75,14 +75,15 @@ export class Scene {
     planeStencilMat.stencilZFail = THREE.ReplaceStencilOp;
     planeStencilMat.stencilZPass = THREE.ReplaceStencilOp;
 
-    frontFaceStencilMat.clippingPlanes = [plane];
-    backFaceStencilMat.clippingPlanes = [plane];
-
     const planeGeom = new THREE.PlaneGeometry();
     const planeMesh = new THREE.Mesh(planeGeom, planeStencilMat);
     planeMesh.scale.setScalar(100000);
     planeMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), plane.normal);
+    planeMesh.position.y = plane.constant;
     this.scene.add(planeMesh);
+
+    frontFaceStencilMat.clippingPlanes = [plane];
+    backFaceStencilMat.clippingPlanes = [plane];
 
     // Test GUI
     const gui = new GUI();
