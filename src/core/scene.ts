@@ -96,7 +96,7 @@ export class Scene {
     };
 
     gui
-      .add(config, 'clippingPlaneHeight', -2000, 2000, 0.01)
+      .add(config, 'clippingPlaneHeight', -2000, 2000, 0.1)
       .name('Clipping Plane')
       .onChange((value: number) => {
         plane.constant = value;
