@@ -54,8 +54,8 @@ export class Scene {
     // everywhere that the front faces are visible the stencil
     // buffer is decremented back to 0.
     const frontFaceStencilMat = new THREE.MeshBasicMaterial();
-    backFaceStencilMat.depthWrite = false;
-    backFaceStencilMat.depthTest = false;
+    frontFaceStencilMat.depthWrite = false;
+    frontFaceStencilMat.depthTest = false;
     frontFaceStencilMat.colorWrite = false;
     frontFaceStencilMat.stencilWrite = true;
     frontFaceStencilMat.stencilFunc = THREE.AlwaysStencilFunc;
@@ -77,9 +77,9 @@ export class Scene {
     planeStencilMat.polygonOffset = true;
     planeStencilMat.polygonOffsetFactor = -10;
 
-    const planeGeom = new THREE.PlaneGeometry();
+    const planeGeom = new THREE.PlaneGeometry(1000, 1000);
     const planeMesh = new THREE.Mesh(planeGeom, planeStencilMat);
-    planeMesh.scale.setScalar(100000);
+    planeMesh.scale.setScalar(100);
     planeMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), plane.normal);
     planeMesh.position.y = plane.constant;
     this.scene.add(planeMesh);
@@ -124,21 +124,36 @@ export class Scene {
           if ((child as THREE.Mesh).isMesh) {
             const mesh = child as THREE.Mesh;
 
-            if (mesh.material) {
-              mesh.material = material;
+            // if (mesh.name.includes('Pipe')) {
+            //   // mesh.position.x += 10 * Math.random();
+            //   // mesh.position.z += 10 * Math.random();
+            // } else {
+            //   // mesh.visible = false;
+            //   // return;
+            // }
 
-              // if (Array.isArray(mesh.material)) {
-              //   for (let i = 0; i < mesh.material.length; i++) {
-              //     // mesh.material[i] = material;
-              //     mesh.material[i].clippingPlanes = [plane];
-              //     mesh.material[i].side = THREE.DoubleSide;
-              //   }
-              // } else {
-              //   // mesh.material = material;
-              //   mesh.material.clippingPlanes = [plane];
-              //   mesh.material.side = THREE.DoubleSide;
-              // }
-            }
+            // if (Array.isArray(mesh.material)) {
+            //   for (let i = 0; i < mesh.material.length; i++) {
+            //     mesh.material[i] = material;
+            //   }
+            // } else {
+            mesh.material = material;
+            // }
+
+            mesh.traverse(function (child) {
+              if ((child as THREE.Mesh).isMesh) {
+                const m = child as THREE.Mesh;
+                if (m.material) {
+                  // if (Array.isArray(m.material)) {
+                  //   for (let i = 0; i < m.material.length; i++) {
+                  //     m.material[i] = material;
+                  //   }
+                  // } else {
+                  m.material = material;
+                  // }
+                }
+              }
+            });
 
             try {
               mesh.geometry = BufferGeometryUtils.mergeVertices(mesh.geometry);
@@ -151,36 +166,105 @@ export class Scene {
                 }
               }
 
+              // const backMesh = mesh.clone();
+              // backMesh.material = [...mesh.material];
+              // if (Array.isArray(backMesh.material)) {
+              //   for (let i = 0; i < backMesh.material.length; i++) {
+              //     backMesh.material[i] = material;
+              //   }
+              // } else {
+              //   backMesh.material = material;
+              // }
+              // scene.add(backMesh);
+
               const backMesh = mesh.clone();
-              backMesh.geometry = backMesh.geometry.clone();
+              backMesh.material = mesh.material.clone();
+              // if (Array.isArray(backMesh.material)) {
+              //   for (let i = 0; i < backMesh.material.length; i++) {
+              //     backMesh.material[i] = backFaceStencilMat;
+              //   }
+              // } else {
               backMesh.material = backFaceStencilMat;
-              scene.add(backMesh);
+              // }
+
+              if (mesh.parent) {
+                mesh.parent.add(backMesh);
+              } else {
+                object.add(backMesh);
+              }
 
               backMesh.traverse(function (child) {
                 if ((child as THREE.Mesh).isMesh) {
-                  const mesh = child as THREE.Mesh;
-                  if (mesh.material) {
-                    mesh.material = backFaceStencilMat;
+                  const m = child as THREE.Mesh;
+                  if (m.material) {
+                    // if (Array.isArray(m.material)) {
+                    //   m.material = [...m.material];
+                    //   for (let i = 0; i < m.material.length; i++) {
+                    //     m.material[i] = backFaceStencilMat;
+                    //   }
+                    // } else {
+                    m.material = backFaceStencilMat;
+                    // }
                   }
                 }
               });
 
               const frontMesh = mesh.clone();
-              frontMesh.geometry = frontMesh.geometry.clone();
+              frontMesh.material = mesh.material.clone();
+              // if (Array.isArray(frontMesh.material)) {
+              //   for (let i = 0; i < frontMesh.material.length; i++) {
+              //     frontMesh.material[i] = frontFaceStencilMat;
+              //   }
+              // } else {
               frontMesh.material = frontFaceStencilMat;
-              scene.add(frontMesh);
+              // }
+
+              if (mesh.parent) {
+                mesh.parent.add(frontMesh);
+              } else {
+                object.add(frontMesh);
+              }
 
               frontMesh.traverse(function (child) {
                 if ((child as THREE.Mesh).isMesh) {
-                  const mesh = child as THREE.Mesh;
-                  if (mesh.material) {
-                    mesh.material = frontFaceStencilMat;
+                  const m = child as THREE.Mesh;
+                  if (m.material) {
+                    if (Array.isArray(m.material)) {
+                      m.material = [...m.material];
+                      for (let i = 0; i < m.material.length; i++) {
+                        m.material[i] = frontFaceStencilMat;
+                      }
+                    } else {
+                      m.material = frontFaceStencilMat;
+                    }
                   }
                 }
               });
             } catch (e) {
               // console.log(e);
             }
+
+            // if (mesh.material) {
+            //   if (Array.isArray(mesh.material)) {
+            //     for (let i = 0; i < mesh.material.length; i++) {
+            //       mesh.material[i] = material;
+            //     }
+            //   } else {
+            //     mesh.material = material;
+            //   }
+
+            //   // if (Array.isArray(mesh.material)) {
+            //   //   for (let i = 0; i < mesh.material.length; i++) {
+            //   //     // mesh.material[i] = material;
+            //   //     mesh.material[i].clippingPlanes = [plane];
+            //   //     mesh.material[i].side = THREE.DoubleSide;
+            //   //   }
+            //   // } else {
+            //   //   // mesh.material = material;
+            //   //   mesh.material.clippingPlanes = [plane];
+            //   //   mesh.material.side = THREE.DoubleSide;
+            //   // }
+            // }
           }
         });
         this.scene.add(object);
