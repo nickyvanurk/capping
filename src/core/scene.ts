@@ -122,28 +122,7 @@ export class Scene {
         planeMesh.position.y = value;
       })
       .onFinishChange(async () => {
-        if (this.model) {
-          const toRemove: THREE.Line[] = [];
-          this.scene.traverse((child: unknown) => {
-            if ((child as THREE.Line).isLine) {
-              toRemove.push(child as THREE.Line);
-            }
-          });
-
-          for (const line of toRemove) {
-            scene.remove(line);
-          }
-
-          this.model.traverse((child: unknown) => {
-            if ((child as THREE.Mesh).isMesh) {
-              const mesh = child as THREE.Mesh;
-              const segments = generateMeshPlaneIntersections(mesh, this.plane);
-              for (let i = 1; i < segments.length; i += 2) {
-                newLine(this.scene, segments[i - 1], segments[i]);
-              }
-            }
-          });
-        }
+        this.generateLines();
       });
 
     const material = new THREE.MeshStandardMaterial({
@@ -207,12 +186,16 @@ export class Scene {
               // console.log(mesh.geometry);
 
               // const path = new CustomSinCurve(10);
-              // // const geometry = new THREE.TubeGeometry(path, 1, 3, 14, false);
-              // const geometry = new THREE.PlaneGeometry(10, 10);
-              // const mat = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+              // const geometry = new THREE.TubeGeometry(path, 1, 3, 14, false);
+              // // const geometry = new THREE.PlaneGeometry(10, 10);
+              // const mat = new THREE.MeshBasicMaterial({ wireframe: true });
               // const me = new THREE.Mesh(geometry, mat);
-              // me.scale.setScalar(100);
-              // me.rotateX(Math.PI / -2);
+              // me.scale.setScalar(20);
+              // me.rotateZ(Math.PI / -2);
+              // me.position.x += 100;
+              // me.name = 'Concrete-Round';
+
+              // object.add(me);
 
               // const segments = generateMeshPlaneIntersections(mesh, plane);
               // for (let i = 1; i < segments.length; i += 2) {
@@ -482,15 +465,7 @@ export class Scene {
 
         this.model = object;
 
-        this.model.traverse((child: unknown) => {
-          if ((child as THREE.Mesh).isMesh) {
-            const mesh = child as THREE.Mesh;
-            const segments = generateMeshPlaneIntersections(mesh, this.plane);
-            for (let i = 1; i < segments.length; i += 2) {
-              newLine(this.scene, segments[i - 1], segments[i]);
-            }
-          }
-        });
+        this.generateLines();
       },
       (xhr) => {
         console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
@@ -511,6 +486,42 @@ export class Scene {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  generateLines() {
+    if (this.model) {
+      const toRemove: THREE.Line[] = [];
+      this.scene.traverse((child: unknown) => {
+        if ((child as THREE.Line).isLine) {
+          toRemove.push(child as THREE.Line);
+        }
+      });
+
+      for (const line of toRemove) {
+        this.scene.remove(line);
+      }
+
+      this.model.traverse((child: unknown) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+          // if (!mesh.name.includes('Concrete-Round')) return;
+
+          const segments = generateMeshPlaneIntersections(mesh, this.plane);
+          for (let i = 1; i < segments.length; i += 2) {
+            newLine(this.scene, segments[i - 1], segments[i], 0x0000ff, 0x0000ff);
+          }
+
+          if (segments.length) {
+            const loops = getLoopsInSegments(segments, this.scene);
+            for (const loop of loops) {
+              for (let i = 0; i < loop.length; i += 2) {
+                newLine(this.scene, loop[i], loop[i + 1], 0xff0000, 0xff0000);
+              }
+            }
+          }
+        }
+      });
+    }
   }
 }
 
@@ -555,11 +566,46 @@ const newLine = (
   parent: THREE.Object3D,
   p1: { x: number; y: number; z: number },
   p2: { x: number; y: number; z: number },
-  color = 0x0000ff
+  colorA = 0x0000ff,
+  colorB = 0x0000ff
 ) => {
-  const material = new THREE.LineBasicMaterial({ color });
-  const points = [new THREE.Vector3(p1.x, p1.y, p1.z), new THREE.Vector3(p2.x, p2.y, p2.z)];
+  // var material = new THREE.LineBasicMaterial( {
+  //     color: 0xffffff,
+  //     vertexColors: THREE.VertexColors
+  // } );
+
+  // var line = new THREE.LineSegments( geometry, material );
+
+  // p1.y = Math.random() * 200 - 100;
+  // p2.y = p1.y;
+
+  const color1 = new THREE.Color(colorA);
+  const color2 = new THREE.Color(colorB);
+
+  const halfP = new THREE.Vector3(p1.x + (p2.x - p1.x) / 2, p1.y + (p2.y - p1.y) / 2, p1.z + (p2.z - p1.z) / 2);
+  const material = new THREE.LineBasicMaterial({ vertexColors: true });
+  const points = [new THREE.Vector3(p1.x, p1.y, p1.z), halfP, halfP, new THREE.Vector3(p2.x, p2.y, p2.z)];
   const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  geometry.setAttribute(
+    'color',
+    new THREE.BufferAttribute(
+      new Uint8Array([
+        color1.r,
+        color1.g,
+        color1.b,
+        color1.r,
+        color1.g,
+        color1.b,
+        color2.r,
+        color2.g,
+        color2.b,
+        color2.r,
+        color2.g,
+        color2.b,
+      ]),
+      3
+    )
+  );
   const line = new THREE.Line(geometry, material);
   // line.rotation.copy(mesh.rotation);
   // line.rotateX(Math.PI / 4);
@@ -585,18 +631,22 @@ const getSegmentPlaneIntersect = (
 
   if (p1OnPlane) {
     segment.push(p1);
+    return true;
   }
 
   if (p2OnPlane) {
     segment.push(p2);
+    return true;
   }
 
-  if (p1OnPlane && p2OnPlane) return;
+  if (p1OnPlane && p2OnPlane) return true;
 
-  if (d1 * d2 > eps) return; // points on same side of plane
+  if (d1 * d2 > eps) return false; // points on same side of plane
 
   const t = d1 / (d1 - d2);
   segment.push(p1.clone().add(p2.clone().sub(p1).multiplyScalar(t)));
+
+  return true;
 };
 
 function generateMeshPlaneIntersections(mesh: THREE.Mesh, plane: THREE.Plane) {
@@ -624,10 +674,41 @@ function generateMeshPlaneIntersections(mesh: THREE.Mesh, plane: THREE.Plane) {
       mesh.localToWorld(b);
       mesh.localToWorld(c);
 
+      const verts = [
+        {
+          dist: distFromPlane(a, plane),
+          vert: a,
+        },
+        {
+          dist: distFromPlane(b, plane),
+          vert: b,
+        },
+        {
+          dist: distFromPlane(c, plane),
+          vert: c,
+        },
+      ];
+
+      // https://casual-effects.com/research/McGuire2011Clipping/McGuire-Clipping.pdf
+      let temp;
+      if (verts[1].dist > 0 && verts[0].dist <= 0) {
+        // Cycle CCW
+        temp = verts[0];
+        verts[0] = verts[1];
+        verts[1] = verts[2];
+        verts[2] = temp;
+      } else if (verts[2].dist > 0 && verts[1].dist <= 0) {
+        // Cycle CW
+        temp = verts[2];
+        verts[2] = verts[1];
+        verts[1] = verts[0];
+        verts[0] = temp;
+      }
+
       const segment: THREE.Vector3[] = [];
-      getSegmentPlaneIntersect(a, b, plane, segment);
-      getSegmentPlaneIntersect(b, c, plane, segment);
-      getSegmentPlaneIntersect(c, a, plane, segment);
+      getSegmentPlaneIntersect(verts[0].vert, verts[1].vert, plane, segment);
+      getSegmentPlaneIntersect(verts[1].vert, verts[2].vert, plane, segment);
+      getSegmentPlaneIntersect(verts[2].vert, verts[0].vert, plane, segment);
 
       if (segment.length === 2) {
         segments.push(...segment);
@@ -645,10 +726,41 @@ function generateMeshPlaneIntersections(mesh: THREE.Mesh, plane: THREE.Plane) {
       mesh.localToWorld(b);
       mesh.localToWorld(c);
 
+      const verts = [
+        {
+          dist: distFromPlane(a, plane),
+          vert: a,
+        },
+        {
+          dist: distFromPlane(b, plane),
+          vert: b,
+        },
+        {
+          dist: distFromPlane(c, plane),
+          vert: c,
+        },
+      ];
+
+      // https://casual-effects.com/research/McGuire2011Clipping/McGuire-Clipping.pdf
+      let temp;
+      if (verts[1].dist > 0 && verts[0].dist <= 0) {
+        // Cycle CCW
+        temp = verts[0];
+        verts[0] = verts[1];
+        verts[1] = verts[2];
+        verts[2] = temp;
+      } else if (verts[2].dist > 0 && verts[1].dist <= 0) {
+        // Cycle CW
+        temp = verts[2];
+        verts[2] = verts[1];
+        verts[1] = verts[0];
+        verts[0] = temp;
+      }
+
       const segment: THREE.Vector3[] = [];
-      getSegmentPlaneIntersect(a, b, plane, segment);
-      getSegmentPlaneIntersect(b, c, plane, segment);
-      getSegmentPlaneIntersect(c, a, plane, segment);
+      getSegmentPlaneIntersect(verts[0].vert, verts[1].vert, plane, segment);
+      getSegmentPlaneIntersect(verts[1].vert, verts[2].vert, plane, segment);
+      getSegmentPlaneIntersect(verts[2].vert, verts[0].vert, plane, segment);
 
       if (segment.length === 2) {
         segments.push(...segment);
@@ -657,4 +769,95 @@ function generateMeshPlaneIntersections(mesh: THREE.Mesh, plane: THREE.Plane) {
   }
 
   return segments;
+}
+
+function getLoopsInSegments(segments: THREE.Vector3[], scene: THREE.Scene) {
+  const loops = [];
+  const loop = [segments[0], segments[1]];
+  const firstSegment = {
+    start: segments[0].clone(),
+    end: segments[1].clone(),
+  };
+  const segment = {
+    start: segments[0],
+    end: segments[1],
+  };
+  segments.splice(0, 2);
+
+  const eps = 0.001;
+  const epsSq = eps * eps;
+
+  const distSq = (a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) => {
+    return (b.x - a.x) * (b.x - a.x) + ((b.y - a.y) * (b.y - a.y) + (b.z - a.z) * (b.z - a.z));
+  };
+
+  // for (let i = 0; i < 42; i++) {
+  while (segments.length > 0) {
+    let foundNextSegment = false;
+    let loopComplete = false;
+
+    for (let j = 0; j < segments.length; j += 2) {
+      const start = segments[j];
+      const end = segments[j + 1];
+
+      // setTimeout(() => {
+      //   newLine(scene, start, end, 0xff0000);
+      // }, j * 500);
+
+      // if (distSq(segment.start, end) < epsSq || distSq(segment.end, start) < epsSq) {
+      if (distSq(segment.end, start) < epsSq) {
+        foundNextSegment = true;
+
+        // setTimeout(() => {
+        //   if (cw) {
+        //     newLine(start, end);
+        //     // newCube(end);
+        //   } else {
+        //     newLine(end, start);
+        //     // newCube(start);
+        //   }
+        // }, idx * 2000);
+
+        segment.start = start;
+        segment.end = end;
+        loop.push(start, end);
+        segments.splice(j, 2);
+
+        if (distSq(end, firstSegment.start) < epsSq) {
+          loops.push([...loop]);
+          loopComplete = true;
+          break;
+        }
+
+        break;
+      }
+
+      // console.log(edge);
+      // setTimeout(() => {
+      //   newLine(start, end);
+      //   // newCube(edge.vertex.point);
+      //   newCube(end);
+      //   // console.log('YOO', edge.vertex.point);
+      // }, idx * 500);
+    }
+
+    if (!foundNextSegment || loopComplete) {
+      // console.log(loopComplete ? 'loop complete' : 'next not found');
+      loop.length = 0;
+
+      if (segments.length > 0) {
+        loop.push(segments[0], segments[1]);
+        firstSegment.start = segments[0].clone();
+        firstSegment.end = segments[1].clone();
+        segment.start = segments[0];
+        segment.end = segments[1];
+        segments.splice(0, 2);
+
+        // newLine(scene, segment.start, segment.end, 0xff0000);
+        // newCube(segment.end);
+      }
+    }
+  }
+
+  return loops;
 }
