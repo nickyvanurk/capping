@@ -46,7 +46,7 @@ export class Scene {
 
     // Clipping plane
     const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
-    plane.constant = 400;
+    plane.constant = 200;
 
     // Stencil
     // PASS 1
@@ -121,12 +121,14 @@ export class Scene {
     const material = new THREE.MeshStandardMaterial({
       clippingPlanes: [plane],
       side: THREE.DoubleSide,
-      wireframe: false,
+      wireframe: true,
     });
 
     planeMesh.onAfterRender = (renderer: THREE.WebGLRenderer) => {
       renderer.clearStencil();
     };
+
+    const scene = this.scene;
 
     const fbxLoader = new FBXLoader();
     fbxLoader.load(
@@ -183,6 +185,11 @@ export class Scene {
               // me.scale.setScalar(100);
               // me.rotateX(Math.PI / -2);
 
+              const segments = generateMeshPlaneIntersections(mesh, plane);
+              for (let i = 1; i < segments.length; i += 2) {
+                newLine(scene, segments[i - 1], segments[i]);
+              }
+
               // scene.add(me);
               const dcel = new Dcel(mesh.geometry);
 
@@ -218,19 +225,6 @@ export class Scene {
                   mesh.add(cube);
                 };
 
-                const newLine = (
-                  p1: { x: number; y: number; z: number },
-                  p2: { x: number; y: number; z: number },
-                  color = 0x0000ff
-                ) => {
-                  const material = new THREE.LineBasicMaterial({ color });
-                  const points = [new THREE.Vector3(p1.x, p1.y, p1.z), new THREE.Vector3(p2.x, p2.y, p2.z)];
-                  const geometry = new THREE.BufferGeometry().setFromPoints(points);
-                  const line = new THREE.Line(geometry, material);
-                  line.rotation.copy(object.rotation);
-                  mesh.add(line);
-                };
-
                 const firstEdge = boundaryEdges[0];
                 boundaryEdges.splice(0, 1);
                 const loops = [];
@@ -249,10 +243,7 @@ export class Scene {
 
                 // console.log(boundaryEdges);
 
-                const eps = 0.001;
                 const epsSq = eps * eps;
-
-                type Vec = { x: number; y: number; z: number };
 
                 const distSq = (a: Vec, b: Vec) => {
                   return (b.x - a.x) * (b.x - a.x) + ((b.y - a.y) * (b.y - a.y) + (b.z - a.z) * (b.z - a.z));
@@ -378,11 +369,11 @@ export class Scene {
               backMesh.material = backFaceStencilMat;
               // }
 
-              if (mesh.parent) {
-                mesh.parent.add(backMesh);
-              } else {
-                object.add(backMesh);
-              }
+              // if (mesh.parent) {
+              //   mesh.parent.add(backMesh);
+              // } else {
+              //   object.add(backMesh);
+              // }
 
               backMesh.traverse(function (child) {
                 if ((child as THREE.Mesh).isMesh) {
@@ -410,11 +401,11 @@ export class Scene {
               frontMesh.material = frontFaceStencilMat;
               // }
 
-              if (mesh.parent) {
-                mesh.parent.add(frontMesh);
-              } else {
-                object.add(frontMesh);
-              }
+              // if (mesh.parent) {
+              //   mesh.parent.add(frontMesh);
+              // } else {
+              //   object.add(frontMesh);
+              // }
 
               frontMesh.traverse(function (child) {
                 if ((child as THREE.Mesh).isMesh) {
@@ -518,3 +509,111 @@ export class Scene {
 
 //   return group;
 // }
+
+const newLine = (
+  parent: THREE.Object3D,
+  p1: { x: number; y: number; z: number },
+  p2: { x: number; y: number; z: number },
+  color = 0x0000ff
+) => {
+  const material = new THREE.LineBasicMaterial({ color });
+  const points = [new THREE.Vector3(p1.x, p1.y, p1.z), new THREE.Vector3(p2.x, p2.y, p2.z)];
+  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  const line = new THREE.Line(geometry, material);
+  // line.rotation.copy(mesh.rotation);
+  // line.rotateX(Math.PI / 4);
+  parent.add(line);
+};
+
+const distFromPlane = (p: THREE.Vector3, plane: THREE.Plane) => {
+  return plane.normal.dot(p) + plane.constant;
+};
+
+const getSegmentPlaneIntersect = (
+  p1: THREE.Vector3,
+  p2: THREE.Vector3,
+  plane: THREE.Plane,
+  segment: THREE.Vector3[]
+) => {
+  const d1 = distFromPlane(p1, plane);
+  const d2 = distFromPlane(p2, plane);
+
+  const eps = 0.0001;
+  const p1OnPlane = Math.abs(d1) < eps;
+  const p2OnPlane = Math.abs(d2) < eps;
+
+  if (p1OnPlane) {
+    segment.push(p1);
+  }
+
+  if (p2OnPlane) {
+    segment.push(p2);
+  }
+
+  if (p1OnPlane && p2OnPlane) return;
+
+  if (d1 * d2 > eps) return; // points on same side of plane
+
+  const t = d1 / (d1 - d2);
+  segment.push(p1.clone().add(p2.clone().sub(p1).multiplyScalar(t)));
+};
+
+function generateMeshPlaneIntersections(mesh: THREE.Mesh, plane: THREE.Plane) {
+  const indexAttribute = mesh.geometry.getIndex();
+  const positionAttribute = mesh.geometry.getAttribute('position');
+  const segments = [];
+
+  if (indexAttribute && positionAttribute) {
+    const indices = indexAttribute.array;
+    const vertices = positionAttribute.array;
+
+    for (let i = 0; i < indices.length; i += 3) {
+      const a = new THREE.Vector3(vertices[indices[i] * 3], vertices[indices[i] * 3 + 1], vertices[indices[i] * 3 + 2]);
+      const b = new THREE.Vector3(
+        vertices[indices[i + 1] * 3],
+        vertices[indices[i + 1] * 3 + 1],
+        vertices[indices[i + 1] * 3 + 2]
+      );
+      const c = new THREE.Vector3(
+        vertices[indices[i + 2] * 3],
+        vertices[indices[i + 2] * 3 + 1],
+        vertices[indices[i + 2] * 3 + 2]
+      );
+      mesh.localToWorld(a);
+      mesh.localToWorld(b);
+      mesh.localToWorld(c);
+
+      const segment: THREE.Vector3[] = [];
+      getSegmentPlaneIntersect(a, b, plane, segment);
+      getSegmentPlaneIntersect(b, c, plane, segment);
+      getSegmentPlaneIntersect(c, a, plane, segment);
+
+      if (segment.length === 2) {
+        segments.push(...segment);
+      }
+    }
+  } else if (!indexAttribute && positionAttribute) {
+    const vertices = positionAttribute.array;
+
+    for (let i = 0; i < vertices.length; i += 9) {
+      const a = new THREE.Vector3(vertices[i + 0], vertices[i + 0 + 1], vertices[i + 0 + 2]);
+      const b = new THREE.Vector3(vertices[i + 3], vertices[i + 3 + 1], vertices[i + 3 + 2]);
+      const c = new THREE.Vector3(vertices[i + 6], vertices[i + 6 + 1], vertices[i + 6 + 2]);
+
+      mesh.localToWorld(a);
+      mesh.localToWorld(b);
+      mesh.localToWorld(c);
+
+      const segment: THREE.Vector3[] = [];
+      getSegmentPlaneIntersect(a, b, plane, segment);
+      getSegmentPlaneIntersect(b, c, plane, segment);
+      getSegmentPlaneIntersect(c, a, plane, segment);
+
+      if (segment.length === 2) {
+        segments.push(...segment);
+      }
+    }
+  }
+
+  return segments;
+}
