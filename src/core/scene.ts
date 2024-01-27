@@ -26,6 +26,9 @@ export class Scene {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
 
+  private plane: THREE.Plane;
+  private model: THREE.Group | null = null;
+
   constructor() {
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -47,6 +50,7 @@ export class Scene {
     // Clipping plane
     const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
     plane.constant = 200;
+    this.plane = plane;
 
     // Stencil
     // PASS 1
@@ -116,6 +120,30 @@ export class Scene {
       .onChange((value: number) => {
         plane.constant = value;
         planeMesh.position.y = value;
+      })
+      .onFinishChange(async () => {
+        if (this.model) {
+          const toRemove: THREE.Line[] = [];
+          this.scene.traverse((child: unknown) => {
+            if ((child as THREE.Line).isLine) {
+              toRemove.push(child as THREE.Line);
+            }
+          });
+
+          for (const line of toRemove) {
+            scene.remove(line);
+          }
+
+          this.model.traverse((child: unknown) => {
+            if ((child as THREE.Mesh).isMesh) {
+              const mesh = child as THREE.Mesh;
+              const segments = generateMeshPlaneIntersections(mesh, this.plane);
+              for (let i = 1; i < segments.length; i += 2) {
+                newLine(this.scene, segments[i - 1], segments[i]);
+              }
+            }
+          });
+        }
       });
 
     const material = new THREE.MeshStandardMaterial({
@@ -140,7 +168,8 @@ export class Scene {
 
             // if (mesh.name.includes('Concrete-Round') || mesh.name.includes('Wind') || mesh.name.includes('fire')) {
             // if (mesh.name.includes('RevitTopography')) {
-            if (mesh.name.includes('Concrete-Round')) {
+            // if (mesh.name.includes('Concrete-Round')) {
+            if (false) {
               //   // mesh.position.x += 10 * Math.random();
               //   // mesh.position.z += 10 * Math.random();
             } else {
@@ -185,10 +214,10 @@ export class Scene {
               // me.scale.setScalar(100);
               // me.rotateX(Math.PI / -2);
 
-              const segments = generateMeshPlaneIntersections(mesh, plane);
-              for (let i = 1; i < segments.length; i += 2) {
-                newLine(scene, segments[i - 1], segments[i]);
-              }
+              // const segments = generateMeshPlaneIntersections(mesh, plane);
+              // for (let i = 1; i < segments.length; i += 2) {
+              //   newLine(scene, segments[i - 1], segments[i]);
+              // }
 
               // scene.add(me);
               const dcel = new Dcel(mesh.geometry);
@@ -450,6 +479,18 @@ export class Scene {
           }
         });
         this.scene.add(object);
+
+        this.model = object;
+
+        this.model.traverse((child: unknown) => {
+          if ((child as THREE.Mesh).isMesh) {
+            const mesh = child as THREE.Mesh;
+            const segments = generateMeshPlaneIntersections(mesh, this.plane);
+            for (let i = 1; i < segments.length; i += 2) {
+              newLine(this.scene, segments[i - 1], segments[i]);
+            }
+          }
+        });
       },
       (xhr) => {
         console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
