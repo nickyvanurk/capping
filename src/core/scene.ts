@@ -1,4 +1,5 @@
 import GUI from 'lil-gui';
+import * as isPointInPolygon from 'robust-point-in-polygon';
 import * as THREE from 'three';
 import { Dcel } from 'three-halfedge-dcel';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -514,15 +515,69 @@ export class Scene {
           if (segments.length) {
             const loops = getLoopsInSegments(segments, this.scene);
 
-            // for (const loop1 of loops) {
-            //   for (const loop2 of loops) {
-            //     if (getIsPointInsidePolygon(loop2[0], loop1));
-            //   }
-            // }
-
             for (const loop of loops) {
               for (let i = 0; i < loop.length; i++) {
                 newLine(this.scene, loop[i], loop[(i + 1) % loop.length], 0xff0000, 0xff0000);
+              }
+            }
+
+            const loopsStructure = new Map<number, number[]>();
+
+            // TODO:
+            // Transform loop into x/y plane
+            // Right now my plane is always horizontal so let's assume that for now.
+            for (let i = 0; i < loops.length; i++) {
+              const loop1 = loops[i];
+              const l1 = loop1.map((v) => [v.x, v.z]);
+
+              loopsStructure.set(i, []);
+
+              let hasInnerLoops = false;
+
+              for (let j = i + 1; j < loops.length; j++) {
+                const loop2 = loops[j];
+                const p = loop2[0];
+
+                let isLoopContained = true;
+
+                // -1 = inside, 0 = on boundary, 1 = outside
+                if (isPointInPolygon(l1, [p.x, p.z]) === -1) {
+                  // Check line intersections between the two loops.
+                  for (let i = 0; i < loop1.length; i++) {
+                    const l1p1 = loop1[i];
+                    const l1p2 = loop1[(i + 1) % loop1.length];
+
+                    for (let j = 0; j < loop2.length; j++) {
+                      const l2p1 = loop2[j];
+                      const l2p2 = loop2[(j + 1) % loop2.length];
+                      if (intersects(l1p1.x, l1p1.z, l1p2.x, l1p2.z, l2p1.x, l2p1.z, l2p2.x, l2p2.z)) {
+                        isLoopContained = false;
+                        break;
+                      }
+                    }
+
+                    if (!isLoopContained) break;
+                  }
+
+                  // Debug rendering
+                  if (isLoopContained) {
+                    for (let i = 0; i < loop2.length; i++) {
+                      newLine(this.scene, loop2[i], loop2[(i + 1) % loop2.length], 0xffff00, 0xffff00);
+                    }
+
+                    hasInnerLoops = true;
+
+                    loopsStructure.get(loops.indexOf(loop1))?.push(loops.indexOf(loop2));
+                  }
+
+                  break;
+                }
+              }
+
+              if (hasInnerLoops) {
+                for (let i = 0; i < loop1.length; i++) {
+                  newLine(this.scene, loop1[i], loop1[(i + 1) % loop1.length], 0x0000ff, 0x0000ff);
+                }
               }
             }
           }
@@ -868,4 +923,17 @@ function getLoopsInSegments(segments: THREE.Vector3[], scene: THREE.Scene) {
   }
 
   return loops;
+}
+
+// https://stackoverflow.com/questions/9043805/test-if-two-lines-intersect-javascript-function
+function intersects(a: number, b: number, c: number, d: number, p: number, q: number, r: number, s: number) {
+  const det = (c - a) * (s - q) - (r - p) * (d - b);
+  let gamma, lambda;
+  if (det === 0) {
+    return false;
+  } else {
+    lambda = ((s - q) * (r - a) + (p - r) * (s - b)) / det;
+    gamma = ((b - d) * (r - a) + (c - a) * (s - b)) / det;
+    return 0 < lambda && lambda < 1 && 0 < gamma && gamma < 1;
+  }
 }
