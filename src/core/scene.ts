@@ -507,15 +507,22 @@ export class Scene {
           // if (!mesh.name.includes('Concrete-Round')) return;
 
           const segments = generateMeshPlaneIntersections(mesh, this.plane);
-          for (let i = 1; i < segments.length; i += 2) {
-            newLine(this.scene, segments[i - 1], segments[i], 0x0000ff, 0x0000ff);
-          }
+          // for (let i = 1; i < segments.length; i += 2) {
+          //   newLine(this.scene, segments[i - 1], segments[i], 0x0000ff, 0x0000ff);
+          // }
 
           if (segments.length) {
             const loops = getLoopsInSegments(segments, this.scene);
+
+            // for (const loop1 of loops) {
+            //   for (const loop2 of loops) {
+            //     if (getIsPointInsidePolygon(loop2[0], loop1));
+            //   }
+            // }
+
             for (const loop of loops) {
-              for (let i = 0; i < loop.length; i += 2) {
-                newLine(this.scene, loop[i], loop[i + 1], 0xff0000, 0xff0000);
+              for (let i = 0; i < loop.length; i++) {
+                newLine(this.scene, loop[i], loop[(i + 1) % loop.length], 0xff0000, 0xff0000);
               }
             }
           }
@@ -818,15 +825,16 @@ function getLoopsInSegments(segments: THREE.Vector3[], scene: THREE.Scene) {
         //   }
         // }, idx * 2000);
 
-        segment.start = start;
-        segment.end = end;
-        loop.push(start, end);
         segments.splice(j, 2);
 
         if (distSq(end, firstSegment.start) < epsSq) {
           loops.push([...loop]);
           loopComplete = true;
           break;
+        } else {
+          segment.start = start;
+          segment.end = end;
+          loop.push(end);
         }
 
         break;
