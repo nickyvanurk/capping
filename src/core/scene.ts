@@ -136,14 +136,12 @@ export class Scene {
     const material = new THREE.MeshStandardMaterial({
       clippingPlanes: [plane],
       side: THREE.DoubleSide,
-      wireframe: true,
+      wireframe: false,
     });
 
     planeMesh.onAfterRender = (renderer: THREE.WebGLRenderer) => {
       renderer.clearStencil();
     };
-
-    const scene = this.scene;
 
     const fbxLoader = new FBXLoader();
     fbxLoader.load(
@@ -156,13 +154,13 @@ export class Scene {
             // if (mesh.name.includes('Concrete-Round') || mesh.name.includes('Wind') || mesh.name.includes('fire')) {
             // if (mesh.name.includes('RevitTopography')) {
             // if (mesh.name.includes('Concrete-Round')) {
-            if (false) {
-              //   // mesh.position.x += 10 * Math.random();
-              //   // mesh.position.z += 10 * Math.random();
-            } else {
-              mesh.visible = false;
-              return;
-            }
+            // if (false) {
+            //   //   // mesh.position.x += 10 * Math.random();
+            //   //   // mesh.position.z += 10 * Math.random();
+            // } else {
+            //   mesh.visible = false;
+            //   return;
+            // }
 
             // console.log(mesh);
 
@@ -633,6 +631,8 @@ export class Scene {
                   geometry.setIndex(indices);
                   geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts), 3));
                   const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                  material.polygonOffset = true;
+                  material.polygonOffsetFactor = -10;
                   const mesh = new THREE.Mesh(geometry, material);
                   this.caps.add(mesh);
                 }
