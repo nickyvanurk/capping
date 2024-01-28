@@ -128,8 +128,16 @@ export class Scene {
       .onChange((value: number) => {
         plane.constant = value;
         planeMesh.position.y = value;
+
+        if (this.model) {
+          this.scene.remove(this.caps);
+        }
       })
       .onFinishChange(async () => {
+        if (this.model) {
+          this.caps = new THREE.Group();
+          this.scene.add(this.caps);
+        }
         this.generateLines();
       });
 
@@ -496,10 +504,6 @@ export class Scene {
 
   generateLines() {
     if (this.model) {
-      this.scene.remove(this.caps);
-      this.caps = new THREE.Group();
-      this.scene.add(this.caps);
-
       const toRemove: THREE.Line[] = [];
       this.scene.traverse((child: unknown) => {
         if ((child as THREE.Line).isLine) {
