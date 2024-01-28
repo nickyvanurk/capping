@@ -195,262 +195,262 @@ export class Scene {
               }
             });
 
-            try {
-              mesh.geometry = BufferGeometryUtils.mergeVertices(mesh.geometry);
-              // console.log(mesh.geometry);
+            // try {
+            //   mesh.geometry = BufferGeometryUtils.mergeVertices(mesh.geometry);
+            //   // console.log(mesh.geometry);
 
-              // const path = new CustomSinCurve(10);
-              // const geometry = new THREE.TubeGeometry(path, 1, 3, 14, false);
-              // // const geometry = new THREE.PlaneGeometry(10, 10);
-              // const mat = new THREE.MeshBasicMaterial({ wireframe: true });
-              // const me = new THREE.Mesh(geometry, mat);
-              // me.scale.setScalar(20);
-              // me.rotateZ(Math.PI / -2);
-              // me.position.x += 100;
-              // me.name = 'Concrete-Round';
+            //   // const path = new CustomSinCurve(10);
+            //   // const geometry = new THREE.TubeGeometry(path, 1, 3, 14, false);
+            //   // // const geometry = new THREE.PlaneGeometry(10, 10);
+            //   // const mat = new THREE.MeshBasicMaterial({ wireframe: true });
+            //   // const me = new THREE.Mesh(geometry, mat);
+            //   // me.scale.setScalar(20);
+            //   // me.rotateZ(Math.PI / -2);
+            //   // me.position.x += 100;
+            //   // me.name = 'Concrete-Round';
 
-              // object.add(me);
+            //   // object.add(me);
 
-              // const segments = generateMeshPlaneIntersections(mesh, plane);
-              // for (let i = 1; i < segments.length; i += 2) {
-              //   newLine(scene, segments[i - 1], segments[i]);
-              // }
+            //   // const segments = generateMeshPlaneIntersections(mesh, plane);
+            //   // for (let i = 1; i < segments.length; i += 2) {
+            //   //   newLine(scene, segments[i - 1], segments[i]);
+            //   // }
 
-              // scene.add(me);
-              const dcel = new Dcel(mesh.geometry);
+            //   // scene.add(me);
+            //   const dcel = new Dcel(mesh.geometry);
 
-              let checkForHoles = false;
-              let checkForPlane = false;
-              // const boundaryEdges = new Set();
-              const boundaryEdges = [];
+            //   let checkForHoles = false;
+            //   let checkForPlane = false;
+            //   // const boundaryEdges = new Set();
+            //   const boundaryEdges = [];
 
-              // Skip non-manifold meshes
-              for (const f of dcel.faces) {
-                let edge = f.edge;
-                for (let i = 0; i < 3; i++) {
-                  if (!edge.twin) {
-                    // boundaryEdges.add(edge);
-                    boundaryEdges.push(edge);
-                    checkForHoles = true;
-                    checkForPlane = true;
-                    // break;
-                  }
-                  edge = edge.next;
+            //   // Skip non-manifold meshes
+            //   for (const f of dcel.faces) {
+            //     let edge = f.edge;
+            //     for (let i = 0; i < 3; i++) {
+            //       if (!edge.twin) {
+            //         // boundaryEdges.add(edge);
+            //         boundaryEdges.push(edge);
+            //         checkForHoles = true;
+            //         checkForPlane = true;
+            //         // break;
+            //       }
+            //       edge = edge.next;
 
-                  if (i === 2 && edge !== f.edge) {
-                    throw Error();
-                  }
-                }
-              }
+            //       if (i === 2 && edge !== f.edge) {
+            //         throw Error();
+            //       }
+            //     }
+            //   }
 
-              if (checkForPlane) {
-                const newCube = (p: { x: number; y: number; z: number }) => {
-                  const geoom = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-                  const cube = new THREE.Mesh(geoom, material);
-                  cube.position.set(p.x, p.y, p.z);
-                  mesh.add(cube);
-                };
+            //   if (checkForPlane) {
+            //     const newCube = (p: { x: number; y: number; z: number }) => {
+            //       const geoom = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+            //       const cube = new THREE.Mesh(geoom, material);
+            //       cube.position.set(p.x, p.y, p.z);
+            //       mesh.add(cube);
+            //     };
 
-                const firstEdge = boundaryEdges[0];
-                boundaryEdges.splice(0, 1);
-                const loops = [];
-                const loop = [firstEdge];
-                const firstSegment = {
-                  start: firstEdge.prev.vertex.point,
-                  end: firstEdge.vertex.point,
-                };
-                const segment = {
-                  start: firstEdge.prev.vertex.point,
-                  end: firstEdge.vertex.point,
-                };
+            //     const firstEdge = boundaryEdges[0];
+            //     boundaryEdges.splice(0, 1);
+            //     const loops = [];
+            //     const loop = [firstEdge];
+            //     const firstSegment = {
+            //       start: firstEdge.prev.vertex.point,
+            //       end: firstEdge.vertex.point,
+            //     };
+            //     const segment = {
+            //       start: firstEdge.prev.vertex.point,
+            //       end: firstEdge.vertex.point,
+            //     };
 
-                // newLine(segment.start, segment.end);
-                // newCube(segment.end);
+            //     // newLine(segment.start, segment.end);
+            //     // newCube(segment.end);
 
-                // console.log(boundaryEdges);
+            //     // console.log(boundaryEdges);
 
-                const epsSq = eps * eps;
+            //     const epsSq = eps * eps;
 
-                const distSq = (a: Vec, b: Vec) => {
-                  return (b.x - a.x) * (b.x - a.x) + ((b.y - a.y) * (b.y - a.y) + (b.z - a.z) * (b.z - a.z));
-                };
+            //     const distSq = (a: Vec, b: Vec) => {
+            //       return (b.x - a.x) * (b.x - a.x) + ((b.y - a.y) * (b.y - a.y) + (b.z - a.z) * (b.z - a.z));
+            //     };
 
-                // console.log(boundaryEdges);
-                // for (let i = 0; i < 42; i++) {
-                while (boundaryEdges.length > 0) {
-                  let foundNextSegment = false;
-                  let loopComplete = false;
+            //     // console.log(boundaryEdges);
+            //     // for (let i = 0; i < 42; i++) {
+            //     while (boundaryEdges.length > 0) {
+            //       let foundNextSegment = false;
+            //       let loopComplete = false;
 
-                  for (const [idx, edge] of boundaryEdges.entries()) {
-                    const start = edge.prev.vertex.point;
-                    const end = edge.vertex.point;
+            //       for (const [idx, edge] of boundaryEdges.entries()) {
+            //         const start = edge.prev.vertex.point;
+            //         const end = edge.vertex.point;
 
-                    if (distSq(segment.start, end) < epsSq || distSq(segment.end, start) < epsSq) {
-                      foundNextSegment = true;
+            //         if (distSq(segment.start, end) < epsSq || distSq(segment.end, start) < epsSq) {
+            //           foundNextSegment = true;
 
-                      const cw = distSq(segment.end, start) < epsSq;
+            //           const cw = distSq(segment.end, start) < epsSq;
 
-                      // if (cw) {
-                      //   newLine(start, end);
-                      //   // newCube(end);
-                      // } else {
-                      //   newLine(end, start);
-                      //   // newCube(start);
-                      // }
+            //           // if (cw) {
+            //           //   newLine(start, end);
+            //           //   // newCube(end);
+            //           // } else {
+            //           //   newLine(end, start);
+            //           //   // newCube(start);
+            //           // }
 
-                      // setTimeout(() => {
-                      //   if (cw) {
-                      //     newLine(start, end);
-                      //     // newCube(end);
-                      //   } else {
-                      //     newLine(end, start);
-                      //     // newCube(start);
-                      //   }
-                      // }, idx * 2000);
+            //           // setTimeout(() => {
+            //           //   if (cw) {
+            //           //     newLine(start, end);
+            //           //     // newCube(end);
+            //           //   } else {
+            //           //     newLine(end, start);
+            //           //     // newCube(start);
+            //           //   }
+            //           // }, idx * 2000);
 
-                      boundaryEdges.splice(idx, 1);
+            //           boundaryEdges.splice(idx, 1);
 
-                      segment.start = start;
-                      segment.end = end;
-                      loop.push(segment);
+            //           segment.start = start;
+            //           segment.end = end;
+            //           loop.push(segment);
 
-                      // if (i === 41) {
-                      //   console.log(segment);
-                      //   console.log(cw);
-                      //   console.log(distSq(start, firstSegment.end));
+            //           // if (i === 41) {
+            //           //   console.log(segment);
+            //           //   console.log(cw);
+            //           //   console.log(distSq(start, firstSegment.end));
 
-                      //   console.log(firstSegment.end, firstSegment.start);
-                      //   newLine(firstSegment.end, firstSegment.start, 0xffff00);
-                      //   // newLine(start, end, 0xff0000);
-                      // }
+            //           //   console.log(firstSegment.end, firstSegment.start);
+            //           //   newLine(firstSegment.end, firstSegment.start, 0xffff00);
+            //           //   // newLine(start, end, 0xff0000);
+            //           // }
 
-                      // if (i === 40) {
-                      //   newLine(start, end, 0xff0000);
-                      //   console.log(distSq(start, firstSegment.end));
-                      // }
+            //           // if (i === 40) {
+            //           //   newLine(start, end, 0xff0000);
+            //           //   console.log(distSq(start, firstSegment.end));
+            //           // }
 
-                      if (
-                        (!cw && distSq(start, firstSegment.end) < epsSq) ||
-                        (cw && distSq(end, firstSegment.start) < epsSq)
-                      ) {
-                        // console.log(loop);
-                        loops.push([...loop]);
-                        loopComplete = true;
-                        break;
-                      }
+            //           if (
+            //             (!cw && distSq(start, firstSegment.end) < epsSq) ||
+            //             (cw && distSq(end, firstSegment.start) < epsSq)
+            //           ) {
+            //             // console.log(loop);
+            //             loops.push([...loop]);
+            //             loopComplete = true;
+            //             break;
+            //           }
 
-                      break;
-                    }
+            //           break;
+            //         }
 
-                    // console.log(edge);
-                    // setTimeout(() => {
-                    //   newLine(start, end);
-                    //   // newCube(edge.vertex.point);
-                    //   newCube(end);
-                    //   // console.log('YOO', edge.vertex.point);
-                    // }, idx * 500);
-                  }
+            //         // console.log(edge);
+            //         // setTimeout(() => {
+            //         //   newLine(start, end);
+            //         //   // newCube(edge.vertex.point);
+            //         //   newCube(end);
+            //         //   // console.log('YOO', edge.vertex.point);
+            //         // }, idx * 500);
+            //       }
 
-                  if (!foundNextSegment || loopComplete) {
-                    // console.log(loopComplete ? 'loop complete' : 'next not found');
-                    loop.length = 0;
+            //       if (!foundNextSegment || loopComplete) {
+            //         // console.log(loopComplete ? 'loop complete' : 'next not found');
+            //         loop.length = 0;
 
-                    if (boundaryEdges.length > 0) {
-                      const edge = boundaryEdges[0];
-                      firstSegment.start = edge.prev.vertex.point;
-                      firstSegment.end = edge.vertex.point;
-                      segment.start = edge.prev.vertex.point;
-                      segment.end = edge.vertex.point;
-                      loop.push(segment);
-                      boundaryEdges.splice(0, 1);
+            //         if (boundaryEdges.length > 0) {
+            //           const edge = boundaryEdges[0];
+            //           firstSegment.start = edge.prev.vertex.point;
+            //           firstSegment.end = edge.vertex.point;
+            //           segment.start = edge.prev.vertex.point;
+            //           segment.end = edge.vertex.point;
+            //           loop.push(segment);
+            //           boundaryEdges.splice(0, 1);
 
-                      // newLine(segment.start, segment.end);
-                      // newCube(segment.end);
-                    }
-                  }
-                }
+            //           // newLine(segment.start, segment.end);
+            //           // newCube(segment.end);
+            //         }
+            //       }
+            //     }
 
-                if (loops.length !== 0 && loops.length !== 2) return;
-                // if (loops.length % 2 === 1) return;
-              }
+            //     if (loops.length !== 0 && loops.length !== 2) return;
+            //     // if (loops.length % 2 === 1) return;
+            //   }
 
-              // const backMesh = mesh.clone();
-              // backMesh.material = [...mesh.material];
-              // if (Array.isArray(backMesh.material)) {
-              //   for (let i = 0; i < backMesh.material.length; i++) {
-              //     backMesh.material[i] = material;
-              //   }
-              // } else {
-              //   backMesh.material = material;
-              // }
-              // scene.add(backMesh);
+            //   // const backMesh = mesh.clone();
+            //   // backMesh.material = [...mesh.material];
+            //   // if (Array.isArray(backMesh.material)) {
+            //   //   for (let i = 0; i < backMesh.material.length; i++) {
+            //   //     backMesh.material[i] = material;
+            //   //   }
+            //   // } else {
+            //   //   backMesh.material = material;
+            //   // }
+            //   // scene.add(backMesh);
 
-              const backMesh = mesh.clone();
-              backMesh.material = mesh.material.clone();
-              // if (Array.isArray(backMesh.material)) {
-              //   for (let i = 0; i < backMesh.material.length; i++) {
-              //     backMesh.material[i] = backFaceStencilMat;
-              //   }
-              // } else {
-              backMesh.material = backFaceStencilMat;
-              // }
+            //   const backMesh = mesh.clone();
+            //   backMesh.material = mesh.material.clone();
+            //   // if (Array.isArray(backMesh.material)) {
+            //   //   for (let i = 0; i < backMesh.material.length; i++) {
+            //   //     backMesh.material[i] = backFaceStencilMat;
+            //   //   }
+            //   // } else {
+            //   backMesh.material = backFaceStencilMat;
+            //   // }
 
-              // if (mesh.parent) {
-              //   mesh.parent.add(backMesh);
-              // } else {
-              //   object.add(backMesh);
-              // }
+            //   // if (mesh.parent) {
+            //   //   mesh.parent.add(backMesh);
+            //   // } else {
+            //   //   object.add(backMesh);
+            //   // }
 
-              backMesh.traverse(function (child) {
-                if ((child as THREE.Mesh).isMesh) {
-                  const m = child as THREE.Mesh;
-                  if (m.material) {
-                    // if (Array.isArray(m.material)) {
-                    //   m.material = [...m.material];
-                    //   for (let i = 0; i < m.material.length; i++) {
-                    //     m.material[i] = backFaceStencilMat;
-                    //   }
-                    // } else {
-                    m.material = backFaceStencilMat;
-                    // }
-                  }
-                }
-              });
+            //   backMesh.traverse(function (child) {
+            //     if ((child as THREE.Mesh).isMesh) {
+            //       const m = child as THREE.Mesh;
+            //       if (m.material) {
+            //         // if (Array.isArray(m.material)) {
+            //         //   m.material = [...m.material];
+            //         //   for (let i = 0; i < m.material.length; i++) {
+            //         //     m.material[i] = backFaceStencilMat;
+            //         //   }
+            //         // } else {
+            //         m.material = backFaceStencilMat;
+            //         // }
+            //       }
+            //     }
+            //   });
 
-              const frontMesh = mesh.clone();
-              frontMesh.material = mesh.material.clone();
-              // if (Array.isArray(frontMesh.material)) {
-              //   for (let i = 0; i < frontMesh.material.length; i++) {
-              //     frontMesh.material[i] = frontFaceStencilMat;
-              //   }
-              // } else {
-              frontMesh.material = frontFaceStencilMat;
-              // }
+            //   const frontMesh = mesh.clone();
+            //   frontMesh.material = mesh.material.clone();
+            //   // if (Array.isArray(frontMesh.material)) {
+            //   //   for (let i = 0; i < frontMesh.material.length; i++) {
+            //   //     frontMesh.material[i] = frontFaceStencilMat;
+            //   //   }
+            //   // } else {
+            //   frontMesh.material = frontFaceStencilMat;
+            //   // }
 
-              // if (mesh.parent) {
-              //   mesh.parent.add(frontMesh);
-              // } else {
-              //   object.add(frontMesh);
-              // }
+            //   // if (mesh.parent) {
+            //   //   mesh.parent.add(frontMesh);
+            //   // } else {
+            //   //   object.add(frontMesh);
+            //   // }
 
-              frontMesh.traverse(function (child) {
-                if ((child as THREE.Mesh).isMesh) {
-                  const m = child as THREE.Mesh;
-                  if (m.material) {
-                    if (Array.isArray(m.material)) {
-                      m.material = [...m.material];
-                      for (let i = 0; i < m.material.length; i++) {
-                        m.material[i] = frontFaceStencilMat;
-                      }
-                    } else {
-                      m.material = frontFaceStencilMat;
-                    }
-                  }
-                }
-              });
-            } catch (e) {
-              // console.log(e);
-            }
+            //   frontMesh.traverse(function (child) {
+            //     if ((child as THREE.Mesh).isMesh) {
+            //       const m = child as THREE.Mesh;
+            //       if (m.material) {
+            //         if (Array.isArray(m.material)) {
+            //           m.material = [...m.material];
+            //           for (let i = 0; i < m.material.length; i++) {
+            //             m.material[i] = frontFaceStencilMat;
+            //           }
+            //         } else {
+            //           m.material = frontFaceStencilMat;
+            //         }
+            //       }
+            //     }
+            //   });
+            // } catch (e) {
+            //   // console.log(e);
+            // }
 
             // if (mesh.material) {
             //   if (Array.isArray(mesh.material)) {
@@ -649,43 +649,6 @@ export class Scene {
   }
 }
 
-// function createPlaneStencilGroup(geometry: THREE.BufferGeometry, plane: THREE.Plane, renderOrder: number) {
-//   const group = new THREE.Group();
-//   const baseMat = new THREE.MeshBasicMaterial();
-//   baseMat.depthWrite = false;
-//   baseMat.depthTest = false;
-//   baseMat.colorWrite = false;
-//   baseMat.stencilWrite = true;
-//   baseMat.stencilFunc = THREE.AlwaysStencilFunc;
-
-//   // back faces
-//   const mat0 = baseMat.clone();
-//   mat0.side = THREE.BackSide;
-//   mat0.clippingPlanes = [plane];
-//   mat0.stencilFail = THREE.IncrementWrapStencilOp;
-//   mat0.stencilZFail = THREE.IncrementWrapStencilOp;
-//   mat0.stencilZPass = THREE.IncrementWrapStencilOp;
-
-//   const mesh0 = new THREE.Mesh(geometry, mat0);
-//   mesh0.renderOrder = renderOrder;
-//   group.add(mesh0);
-
-//   // front faces
-//   const mat1 = baseMat.clone();
-//   mat1.side = THREE.FrontSide;
-//   mat1.clippingPlanes = [plane];
-//   mat1.stencilFail = THREE.DecrementWrapStencilOp;
-//   mat1.stencilZFail = THREE.DecrementWrapStencilOp;
-//   mat1.stencilZPass = THREE.DecrementWrapStencilOp;
-
-//   const mesh1 = new THREE.Mesh(geometry, mat1);
-//   mesh1.renderOrder = renderOrder;
-
-//   group.add(mesh1);
-
-//   return group;
-// }
-
 const newLine = (
   parent: THREE.Object3D,
   p1: { x: number; y: number; z: number },
@@ -693,16 +656,6 @@ const newLine = (
   colorA = 0x0000ff,
   colorB = 0x0000ff
 ) => {
-  // var material = new THREE.LineBasicMaterial( {
-  //     color: 0xffffff,
-  //     vertexColors: THREE.VertexColors
-  // } );
-
-  // var line = new THREE.LineSegments( geometry, material );
-
-  // p1.y = Math.random() * 200 - 100;
-  // p2.y = p1.y;
-
   const color1 = new THREE.Color(colorA);
   const color2 = new THREE.Color(colorB);
 
@@ -731,8 +684,6 @@ const newLine = (
     )
   );
   const line = new THREE.Line(geometry, material);
-  // line.rotation.copy(mesh.rotation);
-  // line.rotateX(Math.PI / 4);
   parent.add(line);
 };
 
@@ -915,7 +866,6 @@ function getLoopsInSegments(segments: THREE.Vector3[], scene: THREE.Scene) {
     return (b.x - a.x) * (b.x - a.x) + ((b.y - a.y) * (b.y - a.y) + (b.z - a.z) * (b.z - a.z));
   };
 
-  // for (let i = 0; i < 42; i++) {
   while (segments.length > 0) {
     let foundNextSegment = false;
     let loopComplete = false;
@@ -924,23 +874,8 @@ function getLoopsInSegments(segments: THREE.Vector3[], scene: THREE.Scene) {
       const start = segments[j];
       const end = segments[j + 1];
 
-      // setTimeout(() => {
-      //   newLine(scene, start, end, 0xff0000);
-      // }, j * 500);
-
-      // if (distSq(segment.start, end) < epsSq || distSq(segment.end, start) < epsSq) {
       if (distSq(segment.end, start) < epsSq) {
         foundNextSegment = true;
-
-        // setTimeout(() => {
-        //   if (cw) {
-        //     newLine(start, end);
-        //     // newCube(end);
-        //   } else {
-        //     newLine(end, start);
-        //     // newCube(start);
-        //   }
-        // }, idx * 2000);
 
         segments.splice(j, 2);
 
@@ -956,18 +891,9 @@ function getLoopsInSegments(segments: THREE.Vector3[], scene: THREE.Scene) {
 
         break;
       }
-
-      // console.log(edge);
-      // setTimeout(() => {
-      //   newLine(start, end);
-      //   // newCube(edge.vertex.point);
-      //   newCube(end);
-      //   // console.log('YOO', edge.vertex.point);
-      // }, idx * 500);
     }
 
     if (!foundNextSegment || loopComplete) {
-      // console.log(loopComplete ? 'loop complete' : 'next not found');
       loop.length = 0;
 
       if (segments.length > 0) {
@@ -977,9 +903,6 @@ function getLoopsInSegments(segments: THREE.Vector3[], scene: THREE.Scene) {
         segment.start = segments[0];
         segment.end = segments[1];
         segments.splice(0, 2);
-
-        // newLine(scene, segment.start, segment.end, 0xff0000);
-        // newCube(segment.end);
       }
     }
   }
