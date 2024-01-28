@@ -5,6 +5,7 @@ import { Dcel } from 'three-halfedge-dcel';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import { Earcut } from 'three/src/extras/Earcut.js';
 
 import '@ui/style.css';
 
@@ -30,6 +31,9 @@ export class Scene {
   private plane: THREE.Plane;
   private model: THREE.Group | null = null;
 
+  private caps = new THREE.Group();
+  private debug = new THREE.Group();
+
   constructor() {
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -43,6 +47,9 @@ export class Scene {
     window.addEventListener('resize', this.handleResize.bind(this), false);
 
     new OrbitControls(this.camera, this.renderer.domElement);
+
+    this.scene.add(this.caps);
+    this.scene.add(this.debug);
 
     // Light
     const ambientLight = new THREE.AmbientLight();
@@ -491,6 +498,10 @@ export class Scene {
 
   generateLines() {
     if (this.model) {
+      this.scene.remove(this.caps);
+      this.caps = new THREE.Group();
+      this.scene.add(this.caps);
+
       const toRemove: THREE.Line[] = [];
       this.scene.traverse((child: unknown) => {
         if ((child as THREE.Line).isLine) {
@@ -515,11 +526,11 @@ export class Scene {
           if (segments.length) {
             const loops = getLoopsInSegments(segments, this.scene);
 
-            for (const loop of loops) {
-              for (let i = 0; i < loop.length; i++) {
-                newLine(this.scene, loop[i], loop[(i + 1) % loop.length], 0xff0000, 0xff0000);
-              }
-            }
+            // for (const loop of loops) {
+            //   for (let i = 0; i < loop.length; i++) {
+            //     newLine(this.scene, loop[i], loop[(i + 1) % loop.length], 0xff0000, 0xff0000);
+            //   }
+            // }
 
             const loopsStructure = new Map<number, number[]>();
 
@@ -559,11 +570,11 @@ export class Scene {
                     if (!isLoopContained) break;
                   }
 
-                  // Debug rendering
                   if (isLoopContained) {
-                    for (let i = 0; i < loop2.length; i++) {
-                      newLine(this.scene, loop2[i], loop2[(i + 1) % loop2.length], 0xffff00, 0xffff00);
-                    }
+                    // Debug rendering
+                    // for (let i = 0; i < loop2.length; i++) {
+                    //   newLine(this.scene, loop2[i], loop2[(i + 1) % loop2.length], 0xffff00, 0xffff00);
+                    // }
 
                     hasInnerLoops = true;
 
@@ -574,9 +585,56 @@ export class Scene {
                 }
               }
 
-              if (hasInnerLoops) {
-                for (let i = 0; i < loop1.length; i++) {
-                  newLine(this.scene, loop1[i], loop1[(i + 1) % loop1.length], 0x0000ff, 0x0000ff);
+              // if (hasInnerLoops) {
+              //   for (let i = 0; i < loop1.length; i++) {
+              //     newLine(this.scene, loop1[i], loop1[(i + 1) % loop1.length], 0x0000ff, 0x0000ff);
+              //   }
+              // }
+            }
+
+            for (const [key1, value1] of loopsStructure) {
+              // if no children
+              if (value1.length === 0) {
+                let isChildOfAnotherLoop = false;
+                for (const [_, value2] of loopsStructure) {
+                  if (value2.includes(key1)) {
+                    isChildOfAnotherLoop = true;
+                    break;
+                  }
+                }
+
+                if (!isChildOfAnotherLoop) {
+                  const loop = loops[key1];
+
+                  // BUG: Loops should never be less than 3 points;
+                  if (loop.length < 3) {
+                    continue;
+                  }
+
+                  const vertices = loop.map((v) => [v.x, v.z]).flat();
+                  const triangles = Earcut.triangulate(vertices);
+                  // console.log(vertices);
+                  // console.log(triangles);
+                  // const points = [];
+
+                  const indices = [];
+                  const verts = [];
+
+                  // Add y-axis
+                  for (let i = 0; i < vertices.length; i += 2) {
+                    verts.push(vertices[i + 0], this.plane.constant, vertices[i + 1]);
+                  }
+
+                  // Rotate faces so they face the correct direction
+                  for (let i = 0; i < triangles.length; i += 3) {
+                    indices.push(triangles[i + 2], triangles[i + 1], triangles[i]);
+                  }
+                  const geometry = new THREE.BufferGeometry();
+                  geometry.setIndex(indices);
+                  geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts), 3));
+                  const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                  const mesh = new THREE.Mesh(geometry, material);
+                  this.caps.add(mesh);
                 }
               }
             }
