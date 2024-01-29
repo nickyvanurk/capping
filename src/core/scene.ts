@@ -1,9 +1,7 @@
 import GUI from 'lil-gui';
-import * as isPointInPolygon from 'robust-point-in-polygon';
+import isPointInPolygon from 'robust-point-in-polygon';
 import * as THREE from 'three';
-import { Dcel } from 'three-halfedge-dcel';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 
