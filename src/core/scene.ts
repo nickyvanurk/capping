@@ -20,7 +20,15 @@ export class Scene {
 
   private controls;
 
+  private capMaterial;
+
   constructor() {
+    const config = {
+      clippingPlaneHeight: 200,
+      meshWireframe: false,
+      capWireframe: false,
+    };
+
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.localClippingEnabled = true;
@@ -45,15 +53,23 @@ export class Scene {
 
     // Clipping plane
     const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
-    plane.constant = 200;
+    plane.constant = config.clippingPlaneHeight;
     this.plane = plane;
+
+    // Materials
+    const meshMaterial = new THREE.MeshStandardMaterial({
+      clippingPlanes: [plane],
+      side: THREE.DoubleSide,
+      wireframe: config.meshWireframe,
+    });
+
+    this.capMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    this.capMaterial.polygonOffset = true;
+    this.capMaterial.polygonOffsetFactor = -10;
+    this.capMaterial.wireframe = config.capWireframe;
 
     // Test GUI
     const gui = new GUI();
-    const config = {
-      clippingPlaneHeight: plane.constant,
-      meshWireframe: false,
-    };
 
     gui
       .add(config, 'clippingPlaneHeight', -2000, 2000, 0.1)
@@ -73,16 +89,15 @@ export class Scene {
         }
       });
 
-    const material = new THREE.MeshStandardMaterial({
-      clippingPlanes: [plane],
-      side: THREE.DoubleSide,
-      wireframe: config.meshWireframe,
-    });
-
     gui
       .add(config, 'meshWireframe')
       .name('Mesh Wireframe')
-      .onChange((value: boolean) => (material.wireframe = value));
+      .onChange((value: boolean) => (meshMaterial.wireframe = value));
+
+    gui
+      .add(config, 'capWireframe')
+      .name('Cap Wireframe')
+      .onChange((value: boolean) => (this.capMaterial.wireframe = value));
 
     const fbxLoader = new FBXLoader();
     fbxLoader.load(
@@ -90,7 +105,7 @@ export class Scene {
       (object) => {
         object.traverse(function (child) {
           if ((child as THREE.Mesh).isMesh) {
-            (child as THREE.Mesh).material = material;
+            (child as THREE.Mesh).material = meshMaterial;
           }
         });
 
@@ -226,10 +241,7 @@ export class Scene {
                   const geometry = new THREE.BufferGeometry();
                   geometry.setIndex(indices);
                   geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts), 3));
-                  const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-                  material.polygonOffset = true;
-                  material.polygonOffsetFactor = -10;
-                  const mesh = new THREE.Mesh(geometry, material);
+                  const mesh = new THREE.Mesh(geometry, this.capMaterial);
                   this.caps.add(mesh);
                 }
               }
