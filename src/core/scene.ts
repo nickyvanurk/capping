@@ -52,6 +52,7 @@ export class Scene {
     const gui = new GUI();
     const config = {
       clippingPlaneHeight: plane.constant,
+      meshWireframe: false,
     };
 
     gui
@@ -72,7 +73,16 @@ export class Scene {
         }
       });
 
-    const material = new THREE.MeshStandardMaterial({ clippingPlanes: [plane], side: THREE.DoubleSide });
+    const material = new THREE.MeshStandardMaterial({
+      clippingPlanes: [plane],
+      side: THREE.DoubleSide,
+      wireframe: config.meshWireframe,
+    });
+
+    gui
+      .add(config, 'meshWireframe')
+      .name('Mesh Wireframe')
+      .onChange((value: boolean) => (material.wireframe = value));
 
     const fbxLoader = new FBXLoader();
     fbxLoader.load(
