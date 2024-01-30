@@ -18,6 +18,8 @@ export class Scene {
   private caps = new THREE.Group();
   private debug = new THREE.Group();
 
+  private controls;
+
   constructor() {
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -26,11 +28,13 @@ export class Scene {
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(71, window.innerWidth / window.innerHeight, 0.1, 100000);
-    this.camera.position.set(/*1500*/ 0, /*1200*/ 0, 1500);
+    this.camera.position.set(-106, 1254, 1118);
 
     window.addEventListener('resize', this.handleResize.bind(this), false);
 
-    new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.target.set(585, 249, 563);
+    this.controls.update();
 
     this.scene.add(this.caps);
     this.scene.add(this.debug);
