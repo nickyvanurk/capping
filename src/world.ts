@@ -7,7 +7,7 @@ import { Earcut } from 'three/src/extras/Earcut.js';
 
 import '@ui/style.css';
 
-export class Scene {
+export class World {
   private renderer: THREE.WebGLRenderer;
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
