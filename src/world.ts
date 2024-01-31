@@ -20,6 +20,7 @@ export class World {
 
   private controls;
 
+  private meshMaterial;
   private capMaterial;
 
   constructor() {
@@ -57,7 +58,7 @@ export class World {
     this.plane = plane;
 
     // Materials
-    const meshMaterial = new THREE.MeshStandardMaterial({
+    this.meshMaterial = new THREE.MeshStandardMaterial({
       clippingPlanes: [plane],
       side: THREE.DoubleSide,
       wireframe: config.meshWireframe,
@@ -92,35 +93,40 @@ export class World {
     gui
       .add(config, 'meshWireframe')
       .name('Mesh Wireframe')
-      .onChange((value: boolean) => (meshMaterial.wireframe = value));
+      .onChange((value: boolean) => (this.meshMaterial.wireframe = value));
 
     gui
       .add(config, 'capWireframe')
       .name('Cap Wireframe')
       .onChange((value: boolean) => (this.capMaterial.wireframe = value));
+  }
 
+  async init() {
+    THREE.DefaultLoadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
+      console.log('Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.');
+    };
+
+    const { house } = await this.loadModels();
+
+    this.scene.add(house);
+
+    this.model = house;
+    this.generateLines();
+  }
+
+  async loadModels() {
     const fbxLoader = new FBXLoader();
-    fbxLoader.load(
-      '/house.fbx',
-      (object) => {
-        object.traverse(function (child) {
-          if ((child as THREE.Mesh).isMesh) {
-            (child as THREE.Mesh).material = meshMaterial;
-          }
-        });
+    const house = await fbxLoader.loadAsync('/house.fbx');
+    this.setupModel(house);
+    return { house };
+  }
 
-        this.scene.add(object);
-
-        this.model = object;
-        this.generateLines();
-      },
-      (xhr) => {
-        console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
-      },
-      (error) => {
-        console.log(error);
+  setupModel(model: THREE.Group) {
+    model.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        (child as THREE.Mesh).material = this.meshMaterial;
       }
-    );
+    });
   }
 
   render() {
