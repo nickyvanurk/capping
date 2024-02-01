@@ -5,6 +5,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 
+import { PerformanceStats } from './stats';
 import './style.css';
 
 export class World {
@@ -23,12 +24,15 @@ export class World {
   private meshMaterial;
   private capMaterial;
 
+  private stats: PerformanceStats;
+
   constructor() {
     const config = {
       clippingPlaneHeight: 200,
       meshWireframe: false,
       capWireframe: false,
       model: 'house.fbx',
+      stats: false,
     };
 
     this.renderer = new THREE.WebGLRenderer();
@@ -48,6 +52,10 @@ export class World {
 
     this.scene.add(this.caps);
     this.scene.add(this.debug);
+
+    this.stats = new PerformanceStats();
+    this.stats.show(config.stats);
+    document.body.appendChild(this.stats.domElement);
 
     // Light
     const ambientLight = new THREE.AmbientLight();
@@ -117,6 +125,11 @@ export class World {
         this.scene.add(this.caps);
         this.generateLines();
       });
+
+    gui
+      .add(config, 'stats')
+      .name('Performance Stats')
+      .onChange((value: boolean) => this.stats.show(value));
   }
 
   async init() {
@@ -144,6 +157,8 @@ export class World {
 
   render() {
     requestAnimationFrame(this.render.bind(this));
+
+    this.stats.update(this.renderer, 1 / 60);
 
     this.renderer.render(this.scene, this.camera);
   }
