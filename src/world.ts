@@ -108,7 +108,7 @@ export class World {
       .onChange((value: boolean) => (this.capMaterial.wireframe = value));
 
     gui
-      .add(config, 'model', ['house.fbx', 'building.fbx'])
+      .add(config, 'model', ['house.fbx', 'building.fbx', 'blizzard.fbx'])
       .name('Model')
       .onChange(async (filename: string) => {
         this.reset();
