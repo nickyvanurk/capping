@@ -184,17 +184,6 @@ export class World {
 
   generateLines() {
     if (this.model) {
-      const toRemove: THREE.Line[] = [];
-      this.scene.traverse((child: unknown) => {
-        if ((child as THREE.Line).isLine) {
-          toRemove.push(child as THREE.Line);
-        }
-      });
-
-      for (const line of toRemove) {
-        this.scene.remove(line);
-      }
-
       this.model.traverse((child: unknown) => {
         if ((child as THREE.Mesh).isMesh) {
           const mesh = child as THREE.Mesh;
