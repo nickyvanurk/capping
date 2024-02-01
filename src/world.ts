@@ -192,6 +192,8 @@ export class World {
 
   generateLines() {
     if (this.model) {
+      const geometryArray: THREE.BufferGeometry[] = [];
+
       this.model.traverse((child: unknown) => {
         if ((child as THREE.Mesh).isMesh) {
           const mesh = child as THREE.Mesh;
@@ -285,14 +287,16 @@ export class World {
                   const geometry = new THREE.BufferGeometry();
                   geometry.setIndex(indices);
                   geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts), 3));
-                  const mesh = new THREE.Mesh(geometry, this.capMaterial);
-                  this.caps.add(mesh);
+                  geometryArray.push(geometry);
                 }
               }
             }
           }
         }
       });
+
+      const mesh = new THREE.Mesh(BufferGeometryUtils.mergeGeometries(geometryArray), this.capMaterial);
+      this.caps.add(mesh);
     }
   }
 }
