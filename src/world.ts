@@ -157,7 +157,8 @@ export class World {
       }
     });
 
-    const mesh = new THREE.Mesh(BufferGeometryUtils.mergeGeometries(geometryArray), this.meshMaterial);
+    const geometry = BufferGeometryUtils.mergeGeometries(geometryArray);
+    const mesh = new THREE.Mesh(BufferGeometryUtils.mergeVertices(geometry), this.meshMaterial);
     mesh.matrixAutoUpdate = false;
     return mesh;
   }
@@ -196,7 +197,12 @@ export class World {
   generateLines(mesh: THREE.Mesh) {
     const geometryArray: THREE.BufferGeometry[] = [];
 
-    const segments = generateMeshPlaneIntersections(mesh, this.plane);
+    // const start = performance.now();
+    const intersectingTriangles = getTrianglesIntersectingPlane(mesh, this.plane);
+    const segments = generateTrianglePlaneSegments(mesh, intersectingTriangles, this.plane);
+    // const end = performance.now();
+    // console.log(`Execution time: ${end - start} ms`);
+
     if (segments.length) {
       const loops = getLoopsInSegments(segments);
       const loopsStructure = new Map<number, number[]>();
@@ -329,22 +335,52 @@ function getSegmentPlaneIntersect(p1: THREE.Vector3, p2: THREE.Vector3, plane: T
   return true;
 }
 
-// TODO:
-// Split code in checking which triangles intersect plane and extracting segments
-function generateMeshPlaneIntersections(mesh: THREE.Mesh, plane: THREE.Plane) {
-  const indexAttribute = mesh.geometry.getIndex();
-  const positionAttribute = mesh.geometry.getAttribute('position');
+function getTrianglesIntersectingPlane(mesh: THREE.Mesh, plane: THREE.Plane) {
+  const vertices = mesh.geometry.getAttribute('position').array;
+  const indices = mesh.geometry.getIndex()!.array;
+
+  const eps = 0.0001;
+  const intersectingTriangles = [];
+
+  for (let i = 0; i < indices.length; i += 3) {
+    const idx1 = indices[i + 0] * 3;
+    const idx2 = indices[i + 1] * 3;
+    const idx3 = indices[i + 2] * 3;
+
+    const a = new THREE.Vector3(vertices[idx1], vertices[idx1 + 1], vertices[idx1 + 2]);
+    const b = new THREE.Vector3(vertices[idx2], vertices[idx2 + 1], vertices[idx2 + 2]);
+    const c = new THREE.Vector3(vertices[idx3], vertices[idx3 + 1], vertices[idx3 + 2]);
+
+    mesh.localToWorld(a);
+    mesh.localToWorld(b);
+    mesh.localToWorld(c);
+
+    const d1 = distFromPlane(a, plane);
+    const d2 = distFromPlane(b, plane);
+    const d3 = distFromPlane(c, plane);
+
+    // No collision
+    if ((d1 < -eps && d2 < -eps && d3 < -eps) || (d1 > eps && d2 > eps && d3 > eps)) {
+      continue;
+    }
+
+    intersectingTriangles.push(i);
+  }
+
+  return intersectingTriangles;
+}
+
+function generateTrianglePlaneSegments(mesh: THREE.Mesh, triangles: number[], plane: THREE.Plane) {
   const segments = [];
 
-  const hasIndex = !!indexAttribute;
-  const vertices = positionAttribute.array;
-  const loopOver = hasIndex ? indexAttribute.array : vertices;
-  const step = hasIndex ? 3 : 9;
+  const indices = mesh.geometry.getIndex()!.array;
+  const vertices = mesh.geometry.getAttribute('position').array;
 
-  for (let i = 0; i < loopOver.length; i += step) {
-    const idx1 = hasIndex ? indexAttribute.array[i + 0] * 3 : i + 0;
-    const idx2 = hasIndex ? indexAttribute.array[i + 1] * 3 : i + 3;
-    const idx3 = hasIndex ? indexAttribute.array[i + 2] * 3 : i + 6;
+  for (let i = 0; i < triangles.length; i++) {
+    const triangleIdx = triangles[i];
+    const idx1 = indices[triangleIdx + 0] * 3;
+    const idx2 = indices[triangleIdx + 1] * 3;
+    const idx3 = indices[triangleIdx + 2] * 3;
 
     const a = new THREE.Vector3(vertices[idx1], vertices[idx1 + 1], vertices[idx1 + 2]);
     const b = new THREE.Vector3(vertices[idx2], vertices[idx2 + 1], vertices[idx2 + 2]);
