@@ -58,8 +58,13 @@ export class World {
     document.body.appendChild(this.stats.domElement);
 
     // Light
-    const ambientLight = new THREE.AmbientLight();
-    this.scene.add(ambientLight);
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x8d8d8d, 2);
+    hemiLight.position.set(0, 100, 0);
+    this.scene.add(hemiLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    dirLight.position.set(-0, 40, 50);
+    this.scene.add(dirLight);
 
     // Clipping plane
     const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
@@ -67,7 +72,7 @@ export class World {
     this.plane = plane;
 
     // Materials
-    this.meshMaterial = new THREE.MeshStandardMaterial({
+    this.meshMaterial = new THREE.MeshLambertMaterial({
       clippingPlanes: [plane],
       side: THREE.DoubleSide,
       wireframe: config.meshWireframe,
