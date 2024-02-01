@@ -2,6 +2,7 @@ import GUI from 'lil-gui';
 import isPointInPolygon from 'robust-point-in-polygon';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 
@@ -19,7 +20,7 @@ export class World {
   private capMaterial: THREE.MeshBasicMaterial;
 
   private plane: THREE.Plane;
-  private model: THREE.Group | null = null;
+  private model: THREE.Mesh | null = null;
   private caps = new THREE.Group();
 
   constructor() {
@@ -137,16 +138,28 @@ export class World {
   async loadModel(filename: string) {
     const fbxLoader = new FBXLoader();
     const model = await fbxLoader.loadAsync(import.meta.env.BASE_URL + filename);
-    this.setupModel(model);
-    return model;
+    const mesh = this.createMergedMeshFromModel(model);
+    return mesh;
   }
 
-  setupModel(model: THREE.Group) {
+  createMergedMeshFromModel(model: THREE.Group) {
+    const geometryArray: THREE.BufferGeometry[] = [];
     model.traverse((child) => {
-      if ((child as THREE.Mesh).isMesh) {
-        (child as THREE.Mesh).material = this.meshMaterial;
+      if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).geometry) {
+        const mesh = child as THREE.Mesh;
+        const geom = mesh.geometry.clone().applyMatrix4(mesh.matrixWorld);
+        geom.deleteAttribute('uv');
+        geom.deleteAttribute('color');
+        if (!geom.hasAttribute('normal')) {
+          geom.computeVertexNormals();
+        }
+        geometryArray.push(geom);
       }
     });
+
+    const mesh = new THREE.Mesh(BufferGeometryUtils.mergeGeometries(geometryArray), this.meshMaterial);
+    mesh.matrixAutoUpdate = false;
+    return mesh;
   }
 
   reset() {
