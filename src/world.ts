@@ -136,7 +136,7 @@ export class World {
 
   async loadModel(filename: string) {
     const fbxLoader = new FBXLoader();
-    const model = await fbxLoader.loadAsync(new URL('/' + filename, import.meta.url).href);
+    const model = await fbxLoader.loadAsync(import.meta.env.BASE_URL + filename);
     this.setupModel(model);
     return model;
   }

@@ -24,7 +24,10 @@
     "baseUrl": ".",
     "paths": {
       "@assets/*": ["src/assets/*"]
-    }
+    },
+
+    /* Types */
+    "types": [ "vite/client"],
   },
   "include": ["src"]
 }
