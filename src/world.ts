@@ -173,7 +173,10 @@ export class World {
     this.scene.remove(this.caps);
     this.caps = new THREE.Group();
     this.scene.add(this.caps);
-    this.generateLines();
+
+    if (this.model) {
+      this.generateLines(this.model);
+    }
   }
 
   render() {
@@ -190,114 +193,105 @@ export class World {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
-  generateLines() {
-    if (this.model) {
-      const geometryArray: THREE.BufferGeometry[] = [];
+  generateLines(mesh: THREE.Mesh) {
+    const geometryArray: THREE.BufferGeometry[] = [];
 
-      this.model.traverse((child: unknown) => {
-        if ((child as THREE.Mesh).isMesh) {
-          const mesh = child as THREE.Mesh;
-          const segments = generateMeshPlaneIntersections(mesh, this.plane);
+    const segments = generateMeshPlaneIntersections(mesh, this.plane);
+    if (segments.length) {
+      const loops = getLoopsInSegments(segments);
+      const loopsStructure = new Map<number, number[]>();
 
-          if (segments.length) {
-            const loops = getLoopsInSegments(segments);
-            const loopsStructure = new Map<number, number[]>();
+      // TODO:
+      // Transform loop into x/y plane
+      // Right now my plane is always horizontal so let's assume that for now.
+      for (let i = 0; i < loops.length; i++) {
+        const loop1 = loops[i];
+        const l1 = loop1.map((v) => [v.x, v.z]);
 
-            // TODO:
-            // Transform loop into x/y plane
-            // Right now my plane is always horizontal so let's assume that for now.
-            for (let i = 0; i < loops.length; i++) {
-              const loop1 = loops[i];
-              const l1 = loop1.map((v) => [v.x, v.z]);
+        loopsStructure.set(i, []);
 
-              loopsStructure.set(i, []);
+        for (let j = i + 1; j < loops.length; j++) {
+          const loop2 = loops[j];
+          const p = loop2[0];
 
-              for (let j = i + 1; j < loops.length; j++) {
-                const loop2 = loops[j];
-                const p = loop2[0];
+          let isLoopContained = true;
 
-                let isLoopContained = true;
+          // -1 = inside, 0 = on boundary, 1 = outside
+          if (isPointInPolygon(l1, [p.x, p.z]) === -1) {
+            // Check line intersections between the two loops.
+            for (let i = 0; i < loop1.length; i++) {
+              const l1p1 = loop1[i];
+              const l1p2 = loop1[(i + 1) % loop1.length];
 
-                // -1 = inside, 0 = on boundary, 1 = outside
-                if (isPointInPolygon(l1, [p.x, p.z]) === -1) {
-                  // Check line intersections between the two loops.
-                  for (let i = 0; i < loop1.length; i++) {
-                    const l1p1 = loop1[i];
-                    const l1p2 = loop1[(i + 1) % loop1.length];
-
-                    for (let j = 0; j < loop2.length; j++) {
-                      const l2p1 = loop2[j];
-                      const l2p2 = loop2[(j + 1) % loop2.length];
-                      if (lineIntersectsLine(l1p1.x, l1p1.z, l1p2.x, l1p2.z, l2p1.x, l2p1.z, l2p2.x, l2p2.z)) {
-                        isLoopContained = false;
-                        break;
-                      }
-                    }
-
-                    if (!isLoopContained) break;
-                  }
-
-                  if (isLoopContained) {
-                    loopsStructure.get(loops.indexOf(loop1))?.push(loops.indexOf(loop2));
-                  }
-
+              for (let j = 0; j < loop2.length; j++) {
+                const l2p1 = loop2[j];
+                const l2p2 = loop2[(j + 1) % loop2.length];
+                if (lineIntersectsLine(l1p1.x, l1p1.z, l1p2.x, l1p2.z, l2p1.x, l2p1.z, l2p2.x, l2p2.z)) {
+                  isLoopContained = false;
                   break;
                 }
               }
+
+              if (!isLoopContained) break;
             }
 
-            // TODO: Create a proper tree structure for the loops
-            // Makes it trivial to triangulate polygons with holes.
-            // Right now that's something I skip.
-            for (const [key1, value1] of loopsStructure) {
-              // if no children
-              if (value1.length === 0) {
-                let isChildOfAnotherLoop = false;
-                for (const [_, value2] of loopsStructure) {
-                  if (value2.includes(key1)) {
-                    isChildOfAnotherLoop = true;
-                    break;
-                  }
-                }
-
-                if (!isChildOfAnotherLoop) {
-                  const loop = loops[key1];
-
-                  // BUG: Loops should never be less than 3 points;
-                  if (loop.length < 3) {
-                    continue;
-                  }
-
-                  const vertices = loop.map((v) => [v.x, v.z]).flat();
-                  const triangles = Earcut.triangulate(vertices);
-
-                  const indices = [];
-                  const verts = [];
-
-                  // Add y-axis
-                  for (let i = 0; i < vertices.length; i += 2) {
-                    verts.push(vertices[i + 0], this.plane.constant, vertices[i + 1]);
-                  }
-
-                  // Rotate faces so they face the correct direction
-                  for (let i = 0; i < triangles.length; i += 3) {
-                    indices.push(triangles[i + 2], triangles[i + 1], triangles[i]);
-                  }
-
-                  const geometry = new THREE.BufferGeometry();
-                  geometry.setIndex(indices);
-                  geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts), 3));
-                  geometryArray.push(geometry);
-                }
-              }
+            if (isLoopContained) {
+              loopsStructure.get(loops.indexOf(loop1))?.push(loops.indexOf(loop2));
             }
+
+            break;
           }
         }
-      });
+      }
 
-      const mesh = new THREE.Mesh(BufferGeometryUtils.mergeGeometries(geometryArray), this.capMaterial);
-      this.caps.add(mesh);
+      // TODO: Create a proper tree structure for the loops
+      // Makes it trivial to triangulate polygons with holes.
+      // Right now that's something I skip.
+      for (const [key1, value1] of loopsStructure) {
+        // if no children
+        if (value1.length === 0) {
+          let isChildOfAnotherLoop = false;
+          for (const [_, value2] of loopsStructure) {
+            if (value2.includes(key1)) {
+              isChildOfAnotherLoop = true;
+              break;
+            }
+          }
+
+          if (!isChildOfAnotherLoop) {
+            const loop = loops[key1];
+
+            // BUG: Loops should never be less than 3 points;
+            if (loop.length < 3) {
+              continue;
+            }
+
+            const vertices = loop.map((v) => [v.x, v.z]).flat();
+            const triangles = Earcut.triangulate(vertices);
+
+            const indices = [];
+            const verts = [];
+
+            // Add y-axis
+            for (let i = 0; i < vertices.length; i += 2) {
+              verts.push(vertices[i + 0], this.plane.constant, vertices[i + 1]);
+            }
+
+            // Rotate faces so they face the correct direction
+            for (let i = 0; i < triangles.length; i += 3) {
+              indices.push(triangles[i + 2], triangles[i + 1], triangles[i]);
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setIndex(indices);
+            geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts), 3));
+            geometryArray.push(geometry);
+          }
+        }
+      }
     }
+
+    this.caps.add(new THREE.Mesh(BufferGeometryUtils.mergeGeometries(geometryArray), this.capMaterial));
   }
 }
 
