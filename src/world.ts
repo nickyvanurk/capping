@@ -12,19 +12,15 @@ export class World {
   private renderer: THREE.WebGLRenderer;
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
+  private controls: OrbitControls;
+  private stats: PerformanceStats;
+
+  private meshMaterial: THREE.MeshLambertMaterial;
+  private capMaterial: THREE.MeshBasicMaterial;
 
   private plane: THREE.Plane;
   private model: THREE.Group | null = null;
-
   private caps = new THREE.Group();
-  private debug = new THREE.Group();
-
-  private controls;
-
-  private meshMaterial;
-  private capMaterial;
-
-  private stats: PerformanceStats;
 
   constructor() {
     const config = {
@@ -51,7 +47,6 @@ export class World {
     this.controls.update();
 
     this.scene.add(this.caps);
-    this.scene.add(this.debug);
 
     this.stats = new PerformanceStats();
     this.stats.show(config.stats);
@@ -321,122 +316,69 @@ function getSegmentPlaneIntersect(p1: THREE.Vector3, p2: THREE.Vector3, plane: T
   return true;
 }
 
+// TODO:
+// Split code in checking which triangles intersect plane and extracting segments
 function generateMeshPlaneIntersections(mesh: THREE.Mesh, plane: THREE.Plane) {
   const indexAttribute = mesh.geometry.getIndex();
   const positionAttribute = mesh.geometry.getAttribute('position');
   const segments = [];
 
-  if (indexAttribute && positionAttribute) {
-    const indices = indexAttribute.array;
-    const vertices = positionAttribute.array;
+  const hasIndex = !!indexAttribute;
+  const vertices = positionAttribute.array;
+  const loopOver = hasIndex ? indexAttribute.array : vertices;
+  const step = hasIndex ? 3 : 9;
 
-    for (let i = 0; i < indices.length; i += 3) {
-      const a = new THREE.Vector3(vertices[indices[i] * 3], vertices[indices[i] * 3 + 1], vertices[indices[i] * 3 + 2]);
-      const b = new THREE.Vector3(
-        vertices[indices[i + 1] * 3],
-        vertices[indices[i + 1] * 3 + 1],
-        vertices[indices[i + 1] * 3 + 2]
-      );
-      const c = new THREE.Vector3(
-        vertices[indices[i + 2] * 3],
-        vertices[indices[i + 2] * 3 + 1],
-        vertices[indices[i + 2] * 3 + 2]
-      );
-      mesh.localToWorld(a);
-      mesh.localToWorld(b);
-      mesh.localToWorld(c);
+  for (let i = 0; i < loopOver.length; i += step) {
+    const idx1 = hasIndex ? indexAttribute.array[i + 0] * 3 : i + 0;
+    const idx2 = hasIndex ? indexAttribute.array[i + 1] * 3 : i + 3;
+    const idx3 = hasIndex ? indexAttribute.array[i + 2] * 3 : i + 6;
 
-      const verts = [
-        {
-          dist: distFromPlane(a, plane),
-          vert: a,
-        },
-        {
-          dist: distFromPlane(b, plane),
-          vert: b,
-        },
-        {
-          dist: distFromPlane(c, plane),
-          vert: c,
-        },
-      ];
+    const a = new THREE.Vector3(vertices[idx1], vertices[idx1 + 1], vertices[idx1 + 2]);
+    const b = new THREE.Vector3(vertices[idx2], vertices[idx2 + 1], vertices[idx2 + 2]);
+    const c = new THREE.Vector3(vertices[idx3], vertices[idx3 + 1], vertices[idx3 + 2]);
 
-      // https://casual-effects.com/research/McGuire2011Clipping/McGuire-Clipping.pdf
-      let temp;
-      if (verts[1].dist > 0 && verts[0].dist <= 0) {
-        // Cycle CCW
-        temp = verts[0];
-        verts[0] = verts[1];
-        verts[1] = verts[2];
-        verts[2] = temp;
-      } else if (verts[2].dist > 0 && verts[1].dist <= 0) {
-        // Cycle CW
-        temp = verts[2];
-        verts[2] = verts[1];
-        verts[1] = verts[0];
-        verts[0] = temp;
-      }
+    mesh.localToWorld(a);
+    mesh.localToWorld(b);
+    mesh.localToWorld(c);
 
-      const segment: THREE.Vector3[] = [];
-      getSegmentPlaneIntersect(verts[0].vert, verts[1].vert, plane, segment);
-      getSegmentPlaneIntersect(verts[1].vert, verts[2].vert, plane, segment);
-      getSegmentPlaneIntersect(verts[2].vert, verts[0].vert, plane, segment);
+    const verts = [
+      {
+        dist: distFromPlane(a, plane),
+        vert: a,
+      },
+      {
+        dist: distFromPlane(b, plane),
+        vert: b,
+      },
+      {
+        dist: distFromPlane(c, plane),
+        vert: c,
+      },
+    ];
 
-      if (segment.length === 2) {
-        segments.push(...segment);
-      }
+    // https://casual-effects.com/research/McGuire2011Clipping/McGuire-Clipping.pdf
+    let temp;
+    if (verts[1].dist > 0 && verts[0].dist <= 0) {
+      // Cycle CCW
+      temp = verts[0];
+      verts[0] = verts[1];
+      verts[1] = verts[2];
+      verts[2] = temp;
+    } else if (verts[2].dist > 0 && verts[1].dist <= 0) {
+      // Cycle CW
+      temp = verts[2];
+      verts[2] = verts[1];
+      verts[1] = verts[0];
+      verts[0] = temp;
     }
-  } else if (!indexAttribute && positionAttribute) {
-    const vertices = positionAttribute.array;
 
-    for (let i = 0; i < vertices.length; i += 9) {
-      const a = new THREE.Vector3(vertices[i + 0], vertices[i + 0 + 1], vertices[i + 0 + 2]);
-      const b = new THREE.Vector3(vertices[i + 3], vertices[i + 3 + 1], vertices[i + 3 + 2]);
-      const c = new THREE.Vector3(vertices[i + 6], vertices[i + 6 + 1], vertices[i + 6 + 2]);
+    const segment: THREE.Vector3[] = [];
+    getSegmentPlaneIntersect(verts[0].vert, verts[1].vert, plane, segment);
+    getSegmentPlaneIntersect(verts[1].vert, verts[2].vert, plane, segment);
+    getSegmentPlaneIntersect(verts[2].vert, verts[0].vert, plane, segment);
 
-      mesh.localToWorld(a);
-      mesh.localToWorld(b);
-      mesh.localToWorld(c);
-
-      const verts = [
-        {
-          dist: distFromPlane(a, plane),
-          vert: a,
-        },
-        {
-          dist: distFromPlane(b, plane),
-          vert: b,
-        },
-        {
-          dist: distFromPlane(c, plane),
-          vert: c,
-        },
-      ];
-
-      // https://casual-effects.com/research/McGuire2011Clipping/McGuire-Clipping.pdf
-      let temp;
-      if (verts[1].dist > 0 && verts[0].dist <= 0) {
-        // Cycle CCW
-        temp = verts[0];
-        verts[0] = verts[1];
-        verts[1] = verts[2];
-        verts[2] = temp;
-      } else if (verts[2].dist > 0 && verts[1].dist <= 0) {
-        // Cycle CW
-        temp = verts[2];
-        verts[2] = verts[1];
-        verts[1] = verts[0];
-        verts[0] = temp;
-      }
-
-      const segment: THREE.Vector3[] = [];
-      getSegmentPlaneIntersect(verts[0].vert, verts[1].vert, plane, segment);
-      getSegmentPlaneIntersect(verts[1].vert, verts[2].vert, plane, segment);
-      getSegmentPlaneIntersect(verts[2].vert, verts[0].vert, plane, segment);
-
-      if (segment.length === 2) {
-        segments.push(...segment);
-      }
+    if (segment.length === 2) {
+      segments.push(...segment);
     }
   }
 
