@@ -12,4 +12,8 @@ export default defineConfig({
 
   define: { global: 'window' },
   base: './',
+
+  build: {
+    target: 'esnext',
+  },
 });

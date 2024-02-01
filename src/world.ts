@@ -28,6 +28,7 @@ export class World {
       clippingPlaneHeight: 200,
       meshWireframe: false,
       capWireframe: false,
+      model: 'house.fbx',
     };
 
     this.renderer = new THREE.WebGLRenderer();
@@ -99,26 +100,38 @@ export class World {
       .add(config, 'capWireframe')
       .name('Cap Wireframe')
       .onChange((value: boolean) => (this.capMaterial.wireframe = value));
+
+    gui
+      .add(config, 'model', ['house.fbx', 'building.fbx'])
+      .name('Model')
+      .onChange(async (filename: string) => {
+        if (this.model) {
+          this.scene.remove(this.model);
+          this.scene.remove(this.caps);
+        }
+
+        this.model = await this.loadModel(filename);
+        this.scene.add(this.model);
+
+        this.caps = new THREE.Group();
+        this.scene.add(this.caps);
+        this.generateLines();
+      });
   }
 
   async init() {
-    THREE.DefaultLoadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
-      console.log('Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.');
-    };
-
-    const { house } = await this.loadModels();
-
+    const house = await this.loadModel('house.fbx');
     this.scene.add(house);
 
     this.model = house;
     this.generateLines();
   }
 
-  async loadModels() {
+  async loadModel(filename: string) {
     const fbxLoader = new FBXLoader();
-    const house = await fbxLoader.loadAsync('/house.fbx');
-    this.setupModel(house);
-    return { house };
+    const model = await fbxLoader.loadAsync(new URL('/' + filename, import.meta.url).href);
+    this.setupModel(model);
+    return model;
   }
 
   setupModel(model: THREE.Group) {
