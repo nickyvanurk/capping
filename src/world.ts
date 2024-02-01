@@ -5,7 +5,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 
-import '@ui/style.css';
+import './style.css';
 
 export class World {
   private renderer: THREE.WebGLRenderer;

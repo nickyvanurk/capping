@@ -6,8 +6,6 @@ export default defineConfig({
     conditions: ['development', 'browser'],
 
     alias: {
-      '@core': resolve('src/core'),
-      '@ui': resolve('src/ui'),
       '@assets': resolve('src/assets'),
     },
   },
