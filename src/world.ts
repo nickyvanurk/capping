@@ -98,9 +98,7 @@ export class World {
       })
       .onFinishChange(async () => {
         if (this.model) {
-          this.caps = new THREE.Group();
-          this.scene.add(this.caps);
-          this.generateLines();
+          this.generateCaps();
         }
       });
 
@@ -118,17 +116,12 @@ export class World {
       .add(config, 'model', ['house.fbx', 'building.fbx'])
       .name('Model')
       .onChange(async (filename: string) => {
-        if (this.model) {
-          this.scene.remove(this.model);
-          this.scene.remove(this.caps);
-        }
+        this.reset();
 
         this.model = await this.loadModel(filename);
         this.scene.add(this.model);
 
-        this.caps = new THREE.Group();
-        this.scene.add(this.caps);
-        this.generateLines();
+        this.generateCaps();
       });
 
     gui
@@ -142,7 +135,8 @@ export class World {
     this.scene.add(house);
 
     this.model = house;
-    this.generateLines();
+
+    this.generateCaps();
   }
 
   async loadModel(filename: string) {
@@ -158,6 +152,20 @@ export class World {
         (child as THREE.Mesh).material = this.meshMaterial;
       }
     });
+  }
+
+  reset() {
+    if (this.model) {
+      this.scene.remove(this.model);
+      this.scene.remove(this.caps);
+    }
+  }
+
+  generateCaps() {
+    this.scene.remove(this.caps);
+    this.caps = new THREE.Group();
+    this.scene.add(this.caps);
+    this.generateLines();
   }
 
   render() {
