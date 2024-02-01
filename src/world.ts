@@ -291,7 +291,9 @@ export class World {
       }
     }
 
-    this.caps.add(new THREE.Mesh(BufferGeometryUtils.mergeGeometries(geometryArray), this.capMaterial));
+    if (geometryArray.length) {
+      this.caps.add(new THREE.Mesh(BufferGeometryUtils.mergeGeometries(geometryArray), this.capMaterial));
+    }
   }
 }
 
