@@ -199,7 +199,7 @@ export class World {
 
     // const start = performance.now();
     const intersectingTriangles = getTrianglesIntersectingPlane(mesh, this.plane);
-    const segments = generateTrianglePlaneSegments(mesh, intersectingTriangles, this.plane);
+    const segments = getTrianglePlaneSegments(mesh, intersectingTriangles, this.plane);
     // const end = performance.now();
     // console.log(`Execution time: ${end - start} ms`);
 
@@ -267,11 +267,6 @@ export class World {
           if (!isChildOfAnotherLoop) {
             const loop = loops[key1];
 
-            // BUG: Loops should never be less than 3 points;
-            if (loop.length < 3) {
-              continue;
-            }
-
             const vertices = loop.map((v) => [v.x, v.z]).flat();
             const triangles = Earcut.triangulate(vertices);
 
@@ -311,23 +306,7 @@ function getSegmentPlaneIntersect(p1: THREE.Vector3, p2: THREE.Vector3, plane: T
   const d1 = distFromPlane(p1, plane);
   const d2 = distFromPlane(p2, plane);
 
-  const eps = 0.0001;
-  const p1OnPlane = Math.abs(d1) < eps;
-  const p2OnPlane = Math.abs(d2) < eps;
-
-  if (p1OnPlane) {
-    segment.push(p1);
-    return true;
-  }
-
-  if (p2OnPlane) {
-    segment.push(p2);
-    return true;
-  }
-
-  if (p1OnPlane && p2OnPlane) return true;
-
-  if (d1 * d2 > eps) return false; // points on same side of plane
+  if (d1 * d2 > 0) return false; // points on same side of plane
 
   const t = d1 / (d1 - d2);
   segment.push(p1.clone().add(p2.clone().sub(p1).multiplyScalar(t)));
@@ -359,8 +338,13 @@ function getTrianglesIntersectingPlane(mesh: THREE.Mesh, plane: THREE.Plane) {
     const d2 = distFromPlane(b, plane);
     const d3 = distFromPlane(c, plane);
 
-    // No collision
-    if ((d1 < -eps && d2 < -eps && d3 < -eps) || (d1 > eps && d2 > eps && d3 > eps)) {
+    if (
+      // No intersection
+      (d1 < -eps && d2 < -eps && d3 < -eps) ||
+      (d1 > eps && d2 > eps && d3 > eps) ||
+      // All points on plane
+      (Math.abs(d1) <= eps && Math.abs(d2) <= eps && Math.abs(d3) <= eps)
+    ) {
       continue;
     }
 
@@ -370,7 +354,7 @@ function getTrianglesIntersectingPlane(mesh: THREE.Mesh, plane: THREE.Plane) {
   return intersectingTriangles;
 }
 
-function generateTrianglePlaneSegments(mesh: THREE.Mesh, triangles: number[], plane: THREE.Plane) {
+function getTrianglePlaneSegments(mesh: THREE.Mesh, triangles: number[], plane: THREE.Plane) {
   const segments = [];
 
   const indices = mesh.geometry.getIndex()!.array;
@@ -426,7 +410,7 @@ function generateTrianglePlaneSegments(mesh: THREE.Mesh, triangles: number[], pl
     getSegmentPlaneIntersect(verts[1].vert, verts[2].vert, plane, segment);
     getSegmentPlaneIntersect(verts[2].vert, verts[0].vert, plane, segment);
 
-    if (segment.length === 2) {
+    if (segment.length >= 2) {
       segments.push(...segment);
     }
   }
