@@ -41,7 +41,6 @@ export class World {
     };
 
     this.renderer = createRenderer();
-    this.renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(this.renderer.domElement);
 
     this.scene = createScene();
