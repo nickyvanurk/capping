@@ -63,7 +63,10 @@ export class Viewer {
     const { hemisphereLight, directionalLight } = createLights();
     this.scene.add(hemisphereLight, directionalLight);
 
-    this.controls = createControls(this.camera, this.renderer.domElement);
+    const controls = new THREE.OrbitControls(camera, this.renderer.domElement);
+    controls.target.set(585, 249, 563);
+    controls.update();
+    this.controls = controls;
 
     this.scene.add(this.caps);
 
