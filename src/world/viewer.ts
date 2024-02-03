@@ -14,9 +14,10 @@ import { PerformanceStats } from './stats';
 import './style.css';
 import { Loop } from './systems/loop';
 import { createRenderer } from './systems/renderer';
-import { Resizer } from './systems/resizer';
 
-export class World {
+export class Viewer {
+  domElement: HTMLElement;
+
   private renderer: THREE.WebGLRenderer;
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
@@ -31,7 +32,15 @@ export class World {
   private model: THREE.Mesh | null = null;
   private caps = new THREE.Group();
 
-  constructor(container: HTMLDivElement) {
+  constructor(container?: HTMLDivElement) {
+    this.domElement = container ? container : document.createElement('div');
+
+    if (!container) {
+      this.domElement.id = 'viewer';
+      this.domElement.style.width = '100%';
+      this.domElement.style.height = '100%';
+    }
+
     const config = {
       clippingPlaneHeight: 200,
       meshWireframe: false,
@@ -41,12 +50,12 @@ export class World {
     };
 
     this.renderer = createRenderer();
-    container.appendChild(this.renderer.domElement);
+    this.domElement.appendChild(this.renderer.domElement);
 
     this.scene = createScene();
     this.camera = createCamera();
 
-    const resizer = new Resizer(container, this.renderer, this.camera);
+    window.addEventListener('resize', () => this.resize());
 
     this.loop = new Loop();
     this.loop.onTick(this.render.bind(this));
@@ -60,7 +69,7 @@ export class World {
 
     this.stats = new PerformanceStats();
     this.stats.show(config.stats);
-    container.appendChild(this.stats.domElement);
+    this.domElement.appendChild(this.stats.domElement);
 
     // Clipping plane
     const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
@@ -80,7 +89,7 @@ export class World {
     this.capMaterial.wireframe = config.capWireframe;
 
     // Test GUI
-    const gui = new GUI({ container });
+    const gui = new GUI({ container: this.domElement });
     gui.domElement.id = 'gui';
 
     gui
@@ -128,6 +137,8 @@ export class World {
   }
 
   async init() {
+    this.resize();
+
     const house = await this.loadModel('house.fbx');
     this.scene.add(house);
 
@@ -295,6 +306,13 @@ export class World {
 
   stop() {
     this.loop.stop();
+  }
+
+  resize() {
+    this.renderer.setSize(this.domElement.clientWidth, this.domElement.clientHeight);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.camera.aspect = this.domElement.clientWidth / this.domElement.clientHeight;
+    this.camera.updateProjectionMatrix();
   }
 }
 

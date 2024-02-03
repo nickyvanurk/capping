@@ -1,11 +1,11 @@
 import './style.css';
-import { World } from './world/world';
+import { Viewer } from './world/viewer';
 
 async function main() {
   const container = document.querySelector('#scene-container')! as HTMLDivElement;
-  const world = new World(container);
-  await world.init();
-  world.start();
+  const viewer = new Viewer(container);
+  await viewer.init();
+  viewer.start();
 }
 
 main();
