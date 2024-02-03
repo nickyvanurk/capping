@@ -1,8 +1,11 @@
 import './style.css';
 import { World } from './world/world';
 
-const container = document.querySelector('#scene-container')! as HTMLDivElement;
+async function main() {
+  const container = document.querySelector('#scene-container')! as HTMLDivElement;
+  const world = new World(container);
+  await world.init();
+  world.render();
+}
 
-const world = new World(container);
-await world.init();
-world.render();
+main();
