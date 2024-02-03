@@ -6,6 +6,7 @@ import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 
+import { createCamera } from './components/camera';
 import { createRenderer } from './components/renderer';
 import { createScene } from './components/scene';
 import { PerformanceStats } from './stats';
@@ -39,8 +40,7 @@ export class World {
     container.appendChild(this.renderer.domElement);
 
     this.scene = createScene();
-    this.camera = new THREE.PerspectiveCamera(71, window.innerWidth / window.innerHeight, 0.1, 100000);
-    this.camera.position.set(-106, 1254, 1118);
+    this.camera = createCamera();
 
     window.addEventListener('resize', this.handleResize.bind(this), false);
 
