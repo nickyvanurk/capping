@@ -7,10 +7,10 @@ import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 
 import { createCamera } from './components/camera';
-import { createRenderer } from './components/renderer';
 import { createScene } from './components/scene';
 import { PerformanceStats } from './stats';
 import './style.css';
+import { createRenderer } from './systems/renderer';
 import { Resizer } from './systems/resizer';
 
 export class World {
