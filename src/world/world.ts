@@ -11,6 +11,7 @@ import { createLights } from './components/lights';
 import { createScene } from './components/scene';
 import { PerformanceStats } from './stats';
 import './style.css';
+import { Loop } from './systems/loop';
 import { createRenderer } from './systems/renderer';
 import { Resizer } from './systems/resizer';
 
@@ -18,6 +19,7 @@ export class World {
   private renderer: THREE.WebGLRenderer;
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
+  private loop: Loop;
   private controls: OrbitControls;
   private stats: PerformanceStats;
 
@@ -45,6 +47,7 @@ export class World {
     this.camera = createCamera();
 
     const resizer = new Resizer(container, this.renderer, this.camera);
+    this.loop = new Loop(this.renderer, this.scene, this.camera);
 
     const { hemisphereLight, directionalLight } = createLights();
     this.scene.add(hemisphereLight, directionalLight);
@@ -179,10 +182,7 @@ export class World {
   }
 
   render() {
-    requestAnimationFrame(this.render.bind(this));
-
     this.stats.update(this.renderer, 1 / 60);
-
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -287,6 +287,14 @@ export class World {
     if (geometryArray.length) {
       this.caps.add(new THREE.Mesh(BufferGeometryUtils.mergeGeometries(geometryArray), this.capMaterial));
     }
+  }
+
+  start() {
+    this.loop.start();
+  }
+
+  stop() {
+    this.loop.stop();
   }
 }
 

@@ -5,7 +5,7 @@ async function main() {
   const container = document.querySelector('#scene-container')! as HTMLDivElement;
   const world = new World(container);
   await world.init();
-  world.render();
+  world.start();
 }
 
 main();
