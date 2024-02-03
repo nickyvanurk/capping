@@ -1,6 +1,6 @@
 import LilGUI from 'lil-gui';
 
-import { PerformanceStats } from '../stats';
+import { PerformanceStats } from './stats';
 import './style.css';
 
 export class GUI {
