@@ -1,8 +1,6 @@
 import GUI from 'lil-gui';
 import isPointInPolygon from 'robust-point-in-polygon';
 
-import { createControls } from './components/controls';
-import { createLights } from './components/lights';
 import { PerformanceStats } from './stats';
 import './style.css';
 import * as THREE from './three';
@@ -60,13 +58,16 @@ export class Viewer {
     this.loop = new Loop();
     this.loop.onTick(this.render.bind(this));
 
-    const { hemisphereLight, directionalLight } = createLights();
-    this.scene.add(hemisphereLight, directionalLight);
-
     const controls = new THREE.OrbitControls(camera, this.renderer.domElement);
     controls.target.set(585, 249, 563);
     controls.update();
     this.controls = controls;
+
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x8d8d8d, 2);
+    hemisphereLight.position.set(0, 100, 0);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(-0, 40, 50);
+    this.scene.add(hemisphereLight, directionalLight);
 
     this.scene.add(this.caps);
 
