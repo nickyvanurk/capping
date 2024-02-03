@@ -6,6 +6,7 @@ import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 
+import { createRenderer } from './components/renderer';
 import { PerformanceStats } from './stats';
 import './style.css';
 
@@ -32,10 +33,8 @@ export class World {
       stats: false,
     };
 
-    this.renderer = new THREE.WebGLRenderer();
+    this.renderer = createRenderer();
     this.renderer.setSize(container.clientWidth, container.clientHeight);
-    this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.localClippingEnabled = true;
     container.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
