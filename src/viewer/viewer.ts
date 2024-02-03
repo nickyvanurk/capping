@@ -2,7 +2,7 @@ import isPointInPolygon from 'robust-point-in-polygon';
 
 import { GUI } from './gui';
 import * as THREE from './three';
-import { Loop } from './utils/loop';
+import { Loop } from './utils';
 
 const config = {
   clippingPlaneHeight: 200,
@@ -52,8 +52,9 @@ export class Viewer {
     const resizeObserver = new ResizeObserver(this.resize.bind(this));
     resizeObserver.observe(this.domElement);
 
-    this.loop = new Loop();
-    this.loop.onTick(this.render.bind(this));
+    const loop = new Loop();
+    loop.onTick(this.render.bind(this));
+    this.loop = loop;
 
     const controls = new THREE.OrbitControls(camera, this.renderer.domElement);
     controls.target.set(585, 249, 563);
