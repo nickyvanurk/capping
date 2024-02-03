@@ -1,7 +1,7 @@
+import * as THREE from '@viewer/libs/three';
 import isPointInPolygon from 'robust-point-in-polygon';
 
 import { GUI } from './gui';
-import * as THREE from './three';
 import { Loop } from './utils';
 
 const config = {

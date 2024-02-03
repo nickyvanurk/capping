@@ -1,4 +1,4 @@
-import * as THREE from './three';
+import * as THREE from '@viewer/libs/three';
 
 /**
  * Used to monitor rendering performance.
