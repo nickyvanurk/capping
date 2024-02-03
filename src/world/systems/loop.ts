@@ -1,35 +1,38 @@
-import type { Object3D, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
-import { Clock } from 'three';
-
 export class Loop {
-  updatables: Object3D[] = [];
+  private raf = 0;
+  private lastTime = 0.0;
 
-  private clock = new Clock();
+  private callbacks: Callback[] = [];
 
-  constructor(
-    public renderer: WebGLRenderer,
-    public scene: Scene,
-    public camera: PerspectiveCamera
-  ) {}
-
-  start() {
-    this.renderer.setAnimationLoop(() => {
-      this.tick();
-      this.renderer.render(this.scene, this.camera);
-    });
+  onTick(callback: Callback): void {
+    const index = this.callbacks.indexOf(callback);
+    index === -1 && this.callbacks.push(callback);
   }
 
-  stop() {
-    this.renderer.setAnimationLoop(null);
+  start(): void {
+    this.raf = requestAnimationFrame(this.update.bind(this));
   }
 
-  tick() {
-    const delta = this.clock.getDelta();
+  stop(): void {
+    cancelAnimationFrame(this.raf);
+    this.callbacks.length = 0;
+  }
 
-    for (let i = 0; i < this.updatables.length; i++) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      //@ts-ignore
-      this.updatables[i].tick(delta);
+  private update(time: number): void {
+    this.raf = requestAnimationFrame(this.update.bind(this));
+    let delta = time - (this.lastTime || 0.0);
+
+    // 250 ms
+    if (delta > 250) {
+      delta = 250;
     }
+
+    for (let i = this.callbacks.length; i--; ) {
+      this.callbacks[i](delta * 0.001 /* ms to s */, time);
+    }
+
+    this.lastTime = time;
   }
 }
+
+type Callback = (delta: number, time: number) => void;

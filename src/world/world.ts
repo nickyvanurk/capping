@@ -47,7 +47,9 @@ export class World {
     this.camera = createCamera();
 
     const resizer = new Resizer(container, this.renderer, this.camera);
-    this.loop = new Loop(this.renderer, this.scene, this.camera);
+
+    this.loop = new Loop();
+    this.loop.onTick(this.render.bind(this));
 
     const { hemisphereLight, directionalLight } = createLights();
     this.scene.add(hemisphereLight, directionalLight);
@@ -179,8 +181,8 @@ export class World {
     }
   }
 
-  render() {
-    this.stats.update(this.renderer, 1 / 60);
+  render(delta = 0) {
+    this.stats.update(this.renderer, delta);
     this.renderer.render(this.scene, this.camera);
   }
 
