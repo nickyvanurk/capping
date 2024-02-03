@@ -7,6 +7,7 @@ import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 
 import { createRenderer } from './components/renderer';
+import { createScene } from './components/scene';
 import { PerformanceStats } from './stats';
 import './style.css';
 
@@ -37,7 +38,7 @@ export class World {
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(this.renderer.domElement);
 
-    this.scene = new THREE.Scene();
+    this.scene = createScene();
     this.camera = new THREE.PerspectiveCamera(71, window.innerWidth / window.innerHeight, 0.1, 100000);
     this.camera.position.set(-106, 1254, 1118);
 
