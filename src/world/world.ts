@@ -11,6 +11,7 @@ import { createRenderer } from './components/renderer';
 import { createScene } from './components/scene';
 import { PerformanceStats } from './stats';
 import './style.css';
+import { Resizer } from './systems/resizer';
 
 export class World {
   private renderer: THREE.WebGLRenderer;
@@ -42,7 +43,7 @@ export class World {
     this.scene = createScene();
     this.camera = createCamera();
 
-    window.addEventListener('resize', this.handleResize.bind(this), false);
+    const resizer = new Resizer(container, this.renderer, this.camera);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.target.set(585, 249, 563);
@@ -188,12 +189,6 @@ export class World {
     this.stats.update(this.renderer, 1 / 60);
 
     this.renderer.render(this.scene, this.camera);
-  }
-
-  handleResize() {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
   generateLines(mesh: THREE.Mesh) {
