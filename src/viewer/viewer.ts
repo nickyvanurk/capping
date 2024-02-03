@@ -1,10 +1,15 @@
-import GUI from 'lil-gui';
 import isPointInPolygon from 'robust-point-in-polygon';
 
-import { PerformanceStats } from './stats';
-import './style.css';
+import { GUI } from './gui';
 import * as THREE from './three';
 import { Loop } from './utils/loop';
+
+const config = {
+  clippingPlaneHeight: 200,
+  meshWireframe: false,
+  capWireframe: false,
+  model: 'house.fbx',
+};
 
 export class Viewer {
   domElement: HTMLElement;
@@ -14,7 +19,7 @@ export class Viewer {
   private camera: THREE.PerspectiveCamera;
   private loop: Loop;
   private controls: THREE.OrbitControls;
-  private stats: PerformanceStats;
+  private gui: GUI;
 
   private meshMaterial: THREE.MeshLambertMaterial;
   private capMaterial: THREE.MeshBasicMaterial;
@@ -31,14 +36,6 @@ export class Viewer {
       this.domElement.style.width = '100%';
       this.domElement.style.height = '100%';
     }
-
-    const config = {
-      clippingPlaneHeight: 200,
-      meshWireframe: false,
-      capWireframe: false,
-      model: 'house.fbx',
-      stats: false,
-    };
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.localClippingEnabled = true;
@@ -69,11 +66,48 @@ export class Viewer {
     directionalLight.position.set(-0, 40, 50);
     this.scene.add(hemisphereLight, directionalLight);
 
-    this.scene.add(this.caps);
+    const gui = new GUI(this.domElement);
+    this.gui = gui;
 
-    this.stats = new PerformanceStats();
-    this.stats.show(config.stats);
-    this.domElement.appendChild(this.stats.domElement);
+    gui.settings
+      .add(config, 'clippingPlaneHeight', -2000, 2000, 0.1)
+      .name('Clipping Plane')
+      .onChange((value: number) => {
+        plane.constant = value;
+
+        if (this.model) {
+          this.scene.remove(this.caps);
+        }
+      })
+      .onFinishChange(async () => {
+        if (this.model) {
+          this.generateCaps();
+        }
+      });
+
+    gui.settings
+      .add(config, 'meshWireframe')
+      .name('Mesh Wireframe')
+      .onChange((value: boolean) => (this.meshMaterial.wireframe = value));
+
+    gui.settings
+      .add(config, 'capWireframe')
+      .name('Cap Wireframe')
+      .onChange((value: boolean) => (this.capMaterial.wireframe = value));
+
+    gui.settings
+      .add(config, 'model', ['house.fbx', 'building.fbx', 'blizzard.fbx'])
+      .name('Model')
+      .onChange(async (filename: string) => {
+        this.reset();
+
+        this.model = await this.loadModel(filename);
+        this.scene.add(this.model);
+
+        this.generateCaps();
+      });
+
+    this.scene.add(this.caps);
 
     // Clipping plane
     const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
@@ -91,53 +125,6 @@ export class Viewer {
     this.capMaterial.polygonOffset = true;
     this.capMaterial.polygonOffsetFactor = -10;
     this.capMaterial.wireframe = config.capWireframe;
-
-    // Test GUI
-    const gui = new GUI({ container: this.domElement });
-    gui.domElement.id = 'gui';
-
-    gui
-      .add(config, 'clippingPlaneHeight', -2000, 2000, 0.1)
-      .name('Clipping Plane')
-      .onChange((value: number) => {
-        plane.constant = value;
-
-        if (this.model) {
-          this.scene.remove(this.caps);
-        }
-      })
-      .onFinishChange(async () => {
-        if (this.model) {
-          this.generateCaps();
-        }
-      });
-
-    gui
-      .add(config, 'meshWireframe')
-      .name('Mesh Wireframe')
-      .onChange((value: boolean) => (this.meshMaterial.wireframe = value));
-
-    gui
-      .add(config, 'capWireframe')
-      .name('Cap Wireframe')
-      .onChange((value: boolean) => (this.capMaterial.wireframe = value));
-
-    gui
-      .add(config, 'model', ['house.fbx', 'building.fbx', 'blizzard.fbx'])
-      .name('Model')
-      .onChange(async (filename: string) => {
-        this.reset();
-
-        this.model = await this.loadModel(filename);
-        this.scene.add(this.model);
-
-        this.generateCaps();
-      });
-
-    gui
-      .add(config, 'stats')
-      .name('Performance Stats')
-      .onChange((value: boolean) => this.stats.show(value));
   }
 
   async init() {
@@ -197,7 +184,7 @@ export class Viewer {
   }
 
   render(delta = 0) {
-    this.stats.update(this.renderer, delta);
+    this.gui.stats.update(this.renderer, delta);
     this.renderer.render(this.scene, this.camera);
   }
 
