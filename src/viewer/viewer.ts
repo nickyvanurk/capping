@@ -1,16 +1,11 @@
 import GUI from 'lil-gui';
 import isPointInPolygon from 'robust-point-in-polygon';
-import * as THREE from 'three';
-import { PerspectiveCamera, Scene, WebGLRenderer } from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
-import { Earcut } from 'three/src/extras/Earcut.js';
 
 import { createControls } from './components/controls';
 import { createLights } from './components/lights';
 import { PerformanceStats } from './stats';
 import './style.css';
+import * as THREE from './three';
 import { Loop } from './utils/loop';
 
 export class Viewer {
@@ -20,7 +15,7 @@ export class Viewer {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private loop: Loop;
-  private controls: OrbitControls;
+  private controls: THREE.OrbitControls;
   private stats: PerformanceStats;
 
   private meshMaterial: THREE.MeshLambertMaterial;
@@ -47,15 +42,15 @@ export class Viewer {
       stats: false,
     };
 
-    const renderer = new WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.localClippingEnabled = true;
     this.domElement.appendChild(renderer.domElement);
     this.renderer = renderer;
 
-    const scene = new Scene();
+    const scene = new THREE.Scene();
     this.scene = scene;
 
-    const camera = new PerspectiveCamera(71, 1, 0.1, 100000);
+    const camera = new THREE.PerspectiveCamera(71, 1, 0.1, 100000);
     camera.position.set(-106, 1254, 1118);
     this.camera = camera;
 
@@ -153,7 +148,7 @@ export class Viewer {
   }
 
   async loadModel(filename: string) {
-    const fbxLoader = new FBXLoader();
+    const fbxLoader = new THREE.FBXLoader();
     const model = await fbxLoader.loadAsync(import.meta.env.BASE_URL + filename);
     const mesh = this.createMergedMeshFromModel(model);
     return mesh;
@@ -174,8 +169,8 @@ export class Viewer {
       }
     });
 
-    const geometry = BufferGeometryUtils.mergeGeometries(geometryArray);
-    const mesh = new THREE.Mesh(BufferGeometryUtils.mergeVertices(geometry), this.meshMaterial);
+    const geometry = THREE.BufferGeometryUtils.mergeGeometries(geometryArray);
+    const mesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeVertices(geometry), this.meshMaterial);
     mesh.matrixAutoUpdate = false;
     return mesh;
   }
@@ -276,7 +271,7 @@ export class Viewer {
             const loop = loops[key1];
 
             const vertices = loop.map((v) => [v.x, v.z]).flat();
-            const triangles = Earcut.triangulate(vertices);
+            const triangles = THREE.Earcut.triangulate(vertices);
 
             const indices = [];
             const verts = [];
@@ -301,7 +296,7 @@ export class Viewer {
     }
 
     if (geometryArray.length) {
-      this.caps.add(new THREE.Mesh(BufferGeometryUtils.mergeGeometries(geometryArray), this.capMaterial));
+      this.caps.add(new THREE.Mesh(THREE.BufferGeometryUtils.mergeGeometries(geometryArray), this.capMaterial));
     }
   }
 

@@ -1,5 +1,5 @@
 import './style.css';
-import { Viewer } from './world/viewer';
+import { Viewer } from './viewer';
 
 async function main() {
   const container = document.querySelector('#scene-container')! as HTMLDivElement;

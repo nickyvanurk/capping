@@ -1,7 +1,4 @@
-import { type WebGLRenderer } from 'three';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import Stats from 'three/examples/jsm/libs/stats.module';
+import * as THREE from './three';
 
 /**
  * Used to monitor rendering performance.
@@ -9,19 +6,17 @@ import Stats from 'three/examples/jsm/libs/stats.module';
 export class PerformanceStats {
   domElement: HTMLElement;
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  private stats = Stats();
-  private panels: Stats.Panel[] = [];
+  private stats = new THREE.Stats();
+  private panels: THREE.Stats.Panel[] = [];
 
   constructor() {
     this.domElement = document.createElement('div');
     this.domElement.className = 'performance-stats';
 
-    this.stats.domElement.style.position = 'absolute';
-    this.stats.domElement.style.display = import.meta.env.DEV ? 'flex' : 'none';
-    this.stats.domElement.style.flexDirection = 'column';
-    this.domElement.appendChild(this.stats.domElement);
+    this.stats.dom.style.position = 'absolute';
+    this.stats.dom.style.display = import.meta.env.DEV ? 'flex' : 'none';
+    this.stats.dom.style.flexDirection = 'column';
+    this.domElement.appendChild(this.stats.dom);
 
     this.addPanel('Delta', '#0f0', '#020');
     this.addPanel('Draw Calls', '#ff0', '#220');
@@ -36,7 +31,7 @@ export class PerformanceStats {
    * Dispose dom elements.
    */
   dispose() {
-    this.domElement.removeChild(this.stats.domElement);
+    this.domElement.removeChild(this.stats.dom);
     this.domElement.remove();
   }
 
@@ -46,7 +41,7 @@ export class PerformanceStats {
    * @param renderer Three.js `WebGLRenderer` instance.
    * @param dt The delta time from the update loop.
    */
-  update(renderer: WebGLRenderer, dt: number) {
+  update(renderer: THREE.WebGLRenderer, dt: number) {
     this.stats.update();
     // The last value scaled the debug graph (max value)
     this.panels[0]?.update(dt * 1000, 200);
@@ -62,13 +57,13 @@ export class PerformanceStats {
    * Toggle domElement visibility.
    */
   show(visible: boolean) {
-    this.stats.domElement.style.display = visible ? 'flex' : 'none';
+    this.stats.dom.style.display = visible ? 'flex' : 'none';
   }
 
   private addPanel(name: string, bgColor: string, fgColor: string) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const callsPanel = Stats.Panel(name, bgColor, fgColor);
+    const callsPanel = THREE.Stats.Panel(name, bgColor, fgColor);
     this.stats.addPanel(callsPanel);
     this.panels.push(callsPanel);
   }

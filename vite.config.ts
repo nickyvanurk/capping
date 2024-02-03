@@ -7,6 +7,7 @@ export default defineConfig({
 
     alias: {
       '@assets': resolve('src/assets'),
+      '@viewer': resolve('src/viewer'),
     },
   },
 
