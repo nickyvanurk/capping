@@ -1,7 +1,7 @@
 import GUI from 'lil-gui';
 import isPointInPolygon from 'robust-point-in-polygon';
 import * as THREE from 'three';
-import { WebGLRenderer } from 'three';
+import { Scene, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
@@ -10,7 +10,6 @@ import { Earcut } from 'three/src/extras/Earcut.js';
 import { createCamera } from './components/camera';
 import { createControls } from './components/controls';
 import { createLights } from './components/lights';
-import { createScene } from './components/scene';
 import { PerformanceStats } from './stats';
 import './style.css';
 import { Loop } from './utils/loop';
@@ -53,7 +52,7 @@ export class Viewer {
     this.renderer.localClippingEnabled = true;
     this.domElement.appendChild(this.renderer.domElement);
 
-    this.scene = createScene();
+    this.scene = new Scene();
     this.camera = createCamera();
 
     const resizeObserver = new ResizeObserver(this.resize.bind(this));
