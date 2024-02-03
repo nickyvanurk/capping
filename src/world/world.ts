@@ -7,6 +7,7 @@ import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 
 import { createCamera } from './components/camera';
+import { createControls } from './components/controls';
 import { createLights } from './components/lights';
 import { createScene } from './components/scene';
 import { PerformanceStats } from './stats';
@@ -52,9 +53,7 @@ export class World {
     const { hemisphereLight, directionalLight } = createLights();
     this.scene.add(hemisphereLight, directionalLight);
 
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.target.set(585, 249, 563);
-    this.controls.update();
+    this.controls = createControls(this.camera, this.renderer.domElement);
 
     this.scene.add(this.caps);
 
