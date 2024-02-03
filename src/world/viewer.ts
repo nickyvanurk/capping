@@ -55,7 +55,8 @@ export class Viewer {
     this.scene = createScene();
     this.camera = createCamera();
 
-    window.addEventListener('resize', () => this.resize());
+    const resizeObserver = new ResizeObserver(this.resize.bind(this));
+    resizeObserver.observe(this.domElement);
 
     this.loop = new Loop();
     this.loop.onTick(this.render.bind(this));
@@ -313,6 +314,7 @@ export class Viewer {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.camera.aspect = this.domElement.clientWidth / this.domElement.clientHeight;
     this.camera.updateProjectionMatrix();
+    this.renderer.render(this.scene, this.camera);
   }
 }
 
