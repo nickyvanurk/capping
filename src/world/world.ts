@@ -7,6 +7,7 @@ import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 
 import { createCamera } from './components/camera';
+import { createLights } from './components/lights';
 import { createScene } from './components/scene';
 import { PerformanceStats } from './stats';
 import './style.css';
@@ -45,6 +46,9 @@ export class World {
 
     const resizer = new Resizer(container, this.renderer, this.camera);
 
+    const { hemisphereLight, directionalLight } = createLights();
+    this.scene.add(hemisphereLight, directionalLight);
+
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.target.set(585, 249, 563);
     this.controls.update();
@@ -54,15 +58,6 @@ export class World {
     this.stats = new PerformanceStats();
     this.stats.show(config.stats);
     container.appendChild(this.stats.domElement);
-
-    // Light
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x8d8d8d, 2);
-    hemiLight.position.set(0, 100, 0);
-    this.scene.add(hemiLight);
-
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-    dirLight.position.set(-0, 40, 50);
-    this.scene.add(dirLight);
 
     // Clipping plane
     const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
