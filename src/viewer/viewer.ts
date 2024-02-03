@@ -59,10 +59,16 @@ export class Viewer {
     gui.settings
       .add(config, 'clippingPlaneHeight', -2000, 2000, 0.1)
       .name('Clipping Plane')
-      .onChange(this.world.setPlaneConstant)
+      .onChange((value: number) => this.world.setPlaneConstant(value))
       .onFinishChange(async () => this.world.generateCaps());
-    gui.settings.add(config, 'meshWireframe').name('Mesh Wireframe').onChange(this.world.meshWireframeVisible);
-    gui.settings.add(config, 'capWireframe').name('Cap Wireframe').onChange(this.world.capWireframeVisible);
+    gui.settings
+      .add(config, 'meshWireframe')
+      .name('Mesh Wireframe')
+      .onChange((visible: boolean) => this.world.meshWireframeVisible(visible));
+    gui.settings
+      .add(config, 'capWireframe')
+      .name('Cap Wireframe')
+      .onChange((visible: boolean) => this.world.capWireframeVisible(visible));
     gui.settings
       .add(config, 'model', ['house.fbx', 'building.fbx', 'blizzard.fbx'])
       .name('Model')
