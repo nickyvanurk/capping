@@ -34,6 +34,7 @@ export class World {
 
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(container.clientWidth, container.clientHeight);
+    this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.localClippingEnabled = true;
     container.appendChild(this.renderer.domElement);
 
