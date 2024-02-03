@@ -33,6 +33,7 @@ export class Viewer {
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.localClippingEnabled = true;
+    renderer.setClearColor(0x131a29);
     this.domElement.appendChild(renderer.domElement);
     this.renderer = renderer;
 
@@ -77,6 +78,28 @@ export class Viewer {
         this.world.displayModel(model);
       });
     this.gui = gui;
+
+    const loadingManager = THREE.DefaultLoadingManager;
+    loadingManager.onProgress = async (_url, itemsLoaded, itemsTotal) => {
+      const percent = Math.floor((itemsLoaded / itemsTotal) * 100);
+      if (percent === 100) {
+        const loadingScreen = document.querySelector('.loadingScreen') as HTMLElement;
+        const loadingBar = document.querySelector('.bar') as HTMLElement;
+
+        loadingBar.style.width = `${100}%`;
+        loadingScreen.style.transition = 'opacity 0.5s ease-in 0.25s';
+
+        setTimeout(() => {
+          loadingScreen.style.opacity = '0';
+        }, 500); // Delay, otherwise the transition is not triggered for some reason.
+
+        setTimeout(() => {
+          loadingBar.style.width = `${0}%`;
+          const newZ = loadingScreen.style.zIndex === '99' ? '-1' : '99';
+          loadingScreen.style.zIndex = newZ;
+        }, 1250); // 500 + total transition time
+      }
+    };
   }
 
   async init() {
@@ -87,8 +110,17 @@ export class Viewer {
   }
 
   async loadModel(filename: string) {
+    const loadingScreen = document.querySelector('.loadingScreen') as HTMLElement;
+    loadingScreen.style.transition = 'none';
+    loadingScreen.style.opacity = '1';
+    loadingScreen.style.zIndex = '99';
+
     const fbxLoader = new THREE.FBXLoader();
-    const model = await fbxLoader.loadAsync(import.meta.env.BASE_URL + filename);
+    const model = await fbxLoader.loadAsync(import.meta.env.BASE_URL + filename, ({ loaded, total }) => {
+      const loadingBar = document.querySelector('.bar') as HTMLElement;
+      const percent = Math.floor((loaded / (total - 1)) * 90);
+      loadingBar.style.width = `${percent}%`;
+    });
     return model;
   }
 

@@ -4,9 +4,31 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Capping</title>
+    <link rel="icon" type="image/x-icon" href="src/assets/favicon.ico">
   </head>
   <body>
+    <div class="loadingScreen">
+        <div class="container">
+            <h1>Capping</h1>
+            <div class="barContainer">
+                <div class="bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="info">
+        <h2>N. van Urk 2024</h2>
+        <h1>Capping</h1>
+        <p>Click and drag to move the camera.</p>
+        <p>Made with <a target="blank" href="https://threejs.org/">three.js</a>.</p>
+    </div>
+
+    <footer>
+        <a href="https://github.com/nickyvanurk/capping" target="_blank">View on GitHub</a>
+    </footer>
+
     <div id="scene-container"></div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
