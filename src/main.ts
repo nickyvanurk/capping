@@ -1,5 +1,5 @@
 import './style.css';
-import { World } from './world';
+import { World } from './world/world';
 
 const container = document.querySelector('#scene-container')! as HTMLDivElement;
 
