@@ -1,13 +1,12 @@
 import GUI from 'lil-gui';
 import isPointInPolygon from 'robust-point-in-polygon';
 import * as THREE from 'three';
-import { Scene, WebGLRenderer } from 'three';
+import { PerspectiveCamera, Scene, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 
-import { createCamera } from './components/camera';
 import { createControls } from './components/controls';
 import { createLights } from './components/lights';
 import { PerformanceStats } from './stats';
@@ -48,12 +47,17 @@ export class Viewer {
       stats: false,
     };
 
-    this.renderer = new WebGLRenderer({ antialias: true });
-    this.renderer.localClippingEnabled = true;
-    this.domElement.appendChild(this.renderer.domElement);
+    const renderer = new WebGLRenderer({ antialias: true });
+    renderer.localClippingEnabled = true;
+    this.domElement.appendChild(renderer.domElement);
+    this.renderer = renderer;
 
-    this.scene = new Scene();
-    this.camera = createCamera();
+    const scene = new Scene();
+    this.scene = scene;
+
+    const camera = new PerspectiveCamera(71, 1, 0.1, 100000);
+    camera.position.set(-106, 1254, 1118);
+    this.camera = camera;
 
     const resizeObserver = new ResizeObserver(this.resize.bind(this));
     resizeObserver.observe(this.domElement);
