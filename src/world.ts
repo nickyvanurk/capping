@@ -23,7 +23,7 @@ export class World {
   private model: THREE.Mesh | null = null;
   private caps = new THREE.Group();
 
-  constructor() {
+  constructor(container: HTMLDivElement) {
     const config = {
       clippingPlaneHeight: 200,
       meshWireframe: false,
@@ -33,9 +33,9 @@ export class World {
     };
 
     this.renderer = new THREE.WebGLRenderer();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.localClippingEnabled = true;
-    document.body.appendChild(this.renderer.domElement);
+    container.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(71, window.innerWidth / window.innerHeight, 0.1, 100000);
@@ -51,7 +51,7 @@ export class World {
 
     this.stats = new PerformanceStats();
     this.stats.show(config.stats);
-    document.body.appendChild(this.stats.domElement);
+    container.appendChild(this.stats.domElement);
 
     // Light
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x8d8d8d, 2);
@@ -80,7 +80,8 @@ export class World {
     this.capMaterial.wireframe = config.capWireframe;
 
     // Test GUI
-    const gui = new GUI();
+    const gui = new GUI({ container });
+    gui.domElement.id = 'gui';
 
     gui
       .add(config, 'clippingPlaneHeight', -2000, 2000, 0.1)
