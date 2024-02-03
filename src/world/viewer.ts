@@ -13,7 +13,7 @@ import { createLights } from './components/lights';
 import { createScene } from './components/scene';
 import { PerformanceStats } from './stats';
 import './style.css';
-import { Loop } from './systems/loop';
+import { Loop } from './utils/loop';
 
 export class Viewer {
   domElement: HTMLElement;
