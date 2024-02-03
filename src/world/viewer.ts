@@ -1,6 +1,7 @@
 import GUI from 'lil-gui';
 import isPointInPolygon from 'robust-point-in-polygon';
 import * as THREE from 'three';
+import { WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
@@ -13,7 +14,6 @@ import { createScene } from './components/scene';
 import { PerformanceStats } from './stats';
 import './style.css';
 import { Loop } from './systems/loop';
-import { createRenderer } from './systems/renderer';
 
 export class Viewer {
   domElement: HTMLElement;
@@ -49,7 +49,8 @@ export class Viewer {
       stats: false,
     };
 
-    this.renderer = createRenderer();
+    this.renderer = new WebGLRenderer({ antialias: true });
+    this.renderer.localClippingEnabled = true;
     this.domElement.appendChild(this.renderer.domElement);
 
     this.scene = createScene();
