@@ -25,6 +25,7 @@
     "vite": "^4.4.5"
   },
   "dependencies": {
+    "eventemitter3": "^5.0.1",
     "robust-point-in-polygon": "^1.0.3",
     "three": "^0.155.0",
     "three-halfedge-dcel": "^1.0.2"

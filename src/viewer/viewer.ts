@@ -2,6 +2,7 @@ import * as THREE from '@viewer/libs/three';
 
 import { GUI } from './gui';
 import { Loop } from './utils';
+import { Viewport } from './viewport';
 import { World } from './world';
 
 const config = {
@@ -12,8 +13,9 @@ const config = {
 };
 
 export class Viewer {
-  domElement: HTMLElement;
+  dom: HTMLElement;
 
+  private viewport: Viewport;
   private renderer: THREE.WebGLRenderer;
   private camera: THREE.PerspectiveCamera;
   private loop: Loop;
@@ -23,18 +25,15 @@ export class Viewer {
   private world: World;
 
   constructor(container?: HTMLElement) {
-    this.domElement = container ? container : document.createElement('div');
-
-    if (!container) {
-      this.domElement.id = 'viewer';
-      this.domElement.style.width = '100%';
-      this.domElement.style.height = '100%';
-    }
+    const viewport = new Viewport(container);
+    this.dom = viewport.dom;
+    viewport.on('resize', () => this.resize());
+    this.viewport = viewport;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.localClippingEnabled = true;
     renderer.setClearColor(0x131a29);
-    this.domElement.appendChild(renderer.domElement);
+    this.dom.appendChild(renderer.domElement);
     this.renderer = renderer;
 
     const world = new World(config);
@@ -43,9 +42,6 @@ export class Viewer {
     const camera = new THREE.PerspectiveCamera(71, 1, 0.1, 100000);
     camera.position.set(-106, 1254, 1118);
     this.camera = camera;
-
-    const resizeObserver = new ResizeObserver(this.resize.bind(this));
-    resizeObserver.observe(this.domElement);
 
     const loop = new Loop();
     loop.onTick(this.render.bind(this));
@@ -56,7 +52,7 @@ export class Viewer {
     controls.update();
     this.controls = controls;
 
-    const gui = new GUI(this.domElement);
+    const gui = new GUI(this.dom);
     gui.settings
       .add(config, 'clippingPlaneHeight', -2000, 2000, 0.1)
       .name('Clipping Plane')
@@ -130,10 +126,11 @@ export class Viewer {
   }
 
   resize() {
-    this.renderer.setSize(this.domElement.clientWidth, this.domElement.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.camera.aspect = this.domElement.clientWidth / this.domElement.clientHeight;
+    this.camera.aspect = this.viewport.width / this.viewport.height;
     this.camera.updateProjectionMatrix();
+
+    this.renderer.setSize(this.viewport.width, this.viewport.height);
+    this.renderer.setPixelRatio(this.viewport.dpr);
     this.renderer.render(this.world.scene, this.camera);
   }
 
