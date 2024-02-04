@@ -1,38 +1,37 @@
-export class Loop {
+import { EventEmitter } from 'eventemitter3';
+
+export class Loop extends EventEmitter {
+  elapsed = 0;
+  delta = 0;
+
+  private now = performance.now();
   private raf = 0;
-  private lastTime = 0.0;
 
-  private callbacks: Callback[] = [];
-
-  onTick(callback: Callback): void {
-    const index = this.callbacks.indexOf(callback);
-    index === -1 && this.callbacks.push(callback);
+  constructor() {
+    super();
   }
 
-  start(): void {
-    this.raf = requestAnimationFrame(this.update.bind(this));
+  tick() {
+    const currentTime = performance.now();
+    this.delta = (currentTime - this.now) / 1000;
+    this.now = currentTime;
+    this.elapsed += this.delta;
+
+    if (this.delta > 0.25) {
+      this.delta = 0.25;
+    }
+
+    this.emit('tick', this.delta, this.elapsed);
+
+    this.raf = requestAnimationFrame(() => this.tick());
   }
 
-  stop(): void {
+  start() {
+    this.now = performance.now();
+    this.raf = requestAnimationFrame(() => this.tick());
+  }
+
+  stop() {
     cancelAnimationFrame(this.raf);
-    this.callbacks.length = 0;
-  }
-
-  private update(time: number): void {
-    this.raf = requestAnimationFrame(this.update.bind(this));
-    let delta = time - (this.lastTime || 0.0);
-
-    // 250 ms
-    if (delta > 250) {
-      delta = 250;
-    }
-
-    for (let i = this.callbacks.length; i--; ) {
-      this.callbacks[i](delta * 0.001 /* ms to s */, time);
-    }
-
-    this.lastTime = time;
   }
 }
-
-type Callback = (delta: number, time: number) => void;

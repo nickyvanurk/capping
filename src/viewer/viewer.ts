@@ -16,9 +16,10 @@ export class Viewer {
   dom: HTMLElement;
 
   private viewport: Viewport;
+  private loop: Loop;
+
   private renderer: THREE.WebGLRenderer;
   private camera: THREE.PerspectiveCamera;
-  private loop: Loop;
   private controls: THREE.OrbitControls;
   private gui: GUI;
 
@@ -27,8 +28,14 @@ export class Viewer {
   constructor(container?: HTMLElement) {
     const viewport = new Viewport(container);
     this.dom = viewport.dom;
-    viewport.on('resize', () => this.resize());
     this.viewport = viewport;
+
+    viewport.on('resize', this.resize.bind(this));
+
+    const loop = new Loop();
+    this.loop = loop;
+
+    loop.on('tick', this.render.bind(this));
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.localClippingEnabled = true;
@@ -36,16 +43,9 @@ export class Viewer {
     this.dom.appendChild(renderer.domElement);
     this.renderer = renderer;
 
-    const world = new World(config);
-    this.world = world;
-
     const camera = new THREE.PerspectiveCamera(71, 1, 0.1, 100000);
     camera.position.set(-106, 1254, 1118);
     this.camera = camera;
-
-    const loop = new Loop();
-    loop.onTick(this.render.bind(this));
-    this.loop = loop;
 
     const controls = new THREE.OrbitControls(camera, this.renderer.domElement);
     controls.target.set(585, 249, 563);
@@ -96,6 +96,9 @@ export class Viewer {
         }, 1250); // 500 + total transition time
       }
     };
+
+    const world = new World(config);
+    this.world = world;
   }
 
   async init() {
@@ -120,7 +123,7 @@ export class Viewer {
     return model;
   }
 
-  render(delta = 0) {
+  render(delta = 1 / 60) {
     this.gui.stats.update(this.renderer, delta);
     this.renderer.render(this.world.scene, this.camera);
   }
