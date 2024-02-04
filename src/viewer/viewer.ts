@@ -2,6 +2,7 @@ import * as THREE from '@viewer/libs/three';
 
 import { Camera } from './camera';
 import { GUI } from './gui';
+import { Renderer } from './renderer';
 import { Loop } from './utils';
 import { Viewport } from './viewport';
 import { World } from './world';
@@ -19,7 +20,7 @@ export class Viewer {
   private viewport: Viewport;
   private loop: Loop;
 
-  private renderer: THREE.WebGLRenderer;
+  private renderer: Renderer;
   private camera: Camera;
   private gui: GUI;
 
@@ -37,13 +38,12 @@ export class Viewer {
 
     loop.on('tick', this.render.bind(this));
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.localClippingEnabled = true;
-    renderer.setClearColor(0x131a29);
-    this.dom.appendChild(renderer.domElement);
+    const renderer = new Renderer();
+    this.dom.appendChild(renderer.canvas);
     this.renderer = renderer;
 
-    this.camera = new Camera(viewport, renderer.domElement);
+    const camera = new Camera(viewport, renderer.canvas);
+    this.camera = camera;
 
     const gui = new GUI(this.dom);
     gui.settings
@@ -118,16 +118,14 @@ export class Viewer {
 
   render(delta = 1 / 60) {
     this.camera.update();
-    this.renderer.render(this.world.scene, this.camera.instance);
-    this.gui.stats.update(this.renderer, delta);
+    this.renderer.render(this.world.scene, this.camera);
+    this.gui.stats.update(this.renderer.instance, delta);
   }
 
   resize() {
     this.camera.resize();
-
-    this.renderer.setSize(this.viewport.width, this.viewport.height);
-    this.renderer.setPixelRatio(this.viewport.dpr);
-    this.renderer.render(this.world.scene, this.camera.instance);
+    this.renderer.resize(this.viewport);
+    this.renderer.render(this.world.scene, this.camera);
   }
 
   start() {
