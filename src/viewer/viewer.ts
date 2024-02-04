@@ -1,5 +1,6 @@
 import * as THREE from '@viewer/libs/three';
 
+import { Camera } from './camera';
 import { GUI } from './gui';
 import { Loop } from './utils';
 import { Viewport } from './viewport';
@@ -19,8 +20,7 @@ export class Viewer {
   private loop: Loop;
 
   private renderer: THREE.WebGLRenderer;
-  private camera: THREE.PerspectiveCamera;
-  private controls: THREE.OrbitControls;
+  private camera: Camera;
   private gui: GUI;
 
   private world: World;
@@ -43,14 +43,7 @@ export class Viewer {
     this.dom.appendChild(renderer.domElement);
     this.renderer = renderer;
 
-    const camera = new THREE.PerspectiveCamera(71, 1, 0.1, 100000);
-    camera.position.set(-106, 1254, 1118);
-    this.camera = camera;
-
-    const controls = new THREE.OrbitControls(camera, this.renderer.domElement);
-    controls.target.set(585, 249, 563);
-    controls.update();
-    this.controls = controls;
+    this.camera = new Camera(viewport, renderer.domElement);
 
     const gui = new GUI(this.dom);
     gui.settings
@@ -124,17 +117,17 @@ export class Viewer {
   }
 
   render(delta = 1 / 60) {
+    this.camera.update();
+    this.renderer.render(this.world.scene, this.camera.instance);
     this.gui.stats.update(this.renderer, delta);
-    this.renderer.render(this.world.scene, this.camera);
   }
 
   resize() {
-    this.camera.aspect = this.viewport.width / this.viewport.height;
-    this.camera.updateProjectionMatrix();
+    this.camera.resize();
 
     this.renderer.setSize(this.viewport.width, this.viewport.height);
     this.renderer.setPixelRatio(this.viewport.dpr);
-    this.renderer.render(this.world.scene, this.camera);
+    this.renderer.render(this.world.scene, this.camera.instance);
   }
 
   start() {
