@@ -1,6 +1,8 @@
 import * as THREE from '@viewer/libs/three';
 import isPointInPolygon from 'robust-point-in-polygon';
 
+import { Environment } from './environment';
+
 export class World {
   scene: THREE.Scene;
 
@@ -15,11 +17,8 @@ export class World {
     const scene = new THREE.Scene();
     this.scene = scene;
 
-    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x8d8d8d, 2);
-    hemisphereLight.position.set(0, 100, 0);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(-0, 40, 50);
-    this.scene.add(hemisphereLight, directionalLight);
+    const environment = new Environment();
+    scene.add(environment.object);
 
     this.scene.add(this.caps);
 
