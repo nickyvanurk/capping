@@ -10,3 +10,4 @@ export { Earcut } from 'three/src/extras/Earcut.js';
 export * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 export { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 export { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+export { GPUComputationRenderer } from 'three/addons/misc/GPUComputationRenderer.js';

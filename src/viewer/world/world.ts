@@ -13,7 +13,10 @@ export class World {
   private model: THREE.Mesh | null = null;
   private caps = new THREE.Group();
 
-  constructor(config: Config) {
+  constructor(
+    config: Config,
+    private renderer: THREE.WebGLRenderer
+  ) {
     const scene = new THREE.Scene();
     this.scene = scene;
 
@@ -83,6 +86,15 @@ export class World {
   }
 
   generateLines(mesh: THREE.Mesh) {
+    const vertices = mesh.geometry.getAttribute('position').array;
+    const indices = mesh.geometry.getIndex()!.array;
+
+    const vertexTextureSize = nextPow2(Math.sqrt(vertices.length));
+    const indexTextureSize = nextPow2(Math.sqrt(indices.length));
+    const textureSize = vertexTextureSize > indexTextureSize ? vertexTextureSize : indexTextureSize;
+
+    const gpuCompute = new THREE.GPUComputationRenderer(textureSize, textureSize, this.renderer);
+
     const geometryArray: THREE.BufferGeometry[] = [];
 
     // const start = performance.now();
@@ -402,6 +414,17 @@ function lineIntersectsLine(a: number, b: number, c: number, d: number, p: numbe
     gamma = ((b - d) * (r - a) + (c - a) * (s - b)) / det;
     return 0 < lambda && lambda < 1 && 0 < gamma && gamma < 1;
   }
+}
+
+function nextPow2(num: number) {
+  num--;
+  num |= num >> 1;
+  num |= num >> 2;
+  num |= num >> 4;
+  num |= num >> 8;
+  num |= num >> 16;
+  num++;
+  return num;
 }
 
 type Config = {
