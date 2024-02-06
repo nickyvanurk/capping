@@ -86,14 +86,14 @@ export class World {
   }
 
   generateLines(mesh: THREE.Mesh) {
-    const vertices = mesh.geometry.getAttribute('position').array;
     const indices = mesh.geometry.getIndex()!.array;
-
-    const vertexTextureSize = nextPow2(Math.sqrt(vertices.length));
-    const indexTextureSize = nextPow2(Math.sqrt(indices.length));
-    const textureSize = vertexTextureSize > indexTextureSize ? vertexTextureSize : indexTextureSize;
+    const textureSize = nextPow2(Math.sqrt(indices.length));
 
     const gpuCompute = new THREE.GPUComputationRenderer(textureSize, textureSize, this.renderer);
+
+    const vertices = mesh.geometry.getAttribute('position').array;
+    const vertexTexture = gpuCompute.createTexture();
+    fillTexture(Array.from(vertices), Array.from(indices), vertexTexture);
 
     const geometryArray: THREE.BufferGeometry[] = [];
 
@@ -425,6 +425,17 @@ function nextPow2(num: number) {
   num |= num >> 16;
   num++;
   return num;
+}
+
+function fillTexture(vertices: number[], indices: number[], texture: THREE.DataTexture) {
+  const data = texture.image.data;
+  for (let i = 0; i < indices.length; i++) {
+    const idx = indices[i];
+    data[i + 0] = vertices[idx + 0];
+    data[i + 1] = vertices[idx + 1];
+    data[i + 2] = vertices[idx + 2];
+    data[i + 3] = 1;
+  }
 }
 
 type Config = {
