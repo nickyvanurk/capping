@@ -1,7 +1,7 @@
 import * as THREE from '@viewer/libs/three';
 import isPointInPolygon from 'robust-point-in-polygon';
 
-import clippingVert from './clipping.vs';
+import clippingFrag from './clipping.fs';
 import { Environment } from './environment';
 
 export class World {
@@ -87,20 +87,28 @@ export class World {
   }
 
   generateLines(mesh: THREE.Mesh) {
-    let start = performance.now();
-
     const indices = mesh.geometry.getIndex()!.array;
-    const textureSize = nextPow2(Math.sqrt(indices.length));
-    const gpuCompute = new THREE.GPUComputationRenderer(textureSize, textureSize, this.renderer);
-
     const vertices = mesh.geometry.getAttribute('position').array;
-    const vertexTexture = gpuCompute.createTexture();
-    fillTexture(Array.from(vertices), Array.from(indices), vertexTexture);
+    const numTriangles = indices.length / 3;
+    const dim = Math.ceil(Math.sqrt(numTriangles));
 
-    const trianglesVariable = gpuCompute.addVariable('vertexTexture', clippingVert, vertexTexture);
+    // Input
+    const data = new Float32Array(dim * 3 * dim * 4);
+    const vertexTexture = new THREE.DataTexture(data, dim * 3, dim, THREE.RGBAFormat, THREE.FloatType);
+    vertexTexture.minFilter = vertexTexture.magFilter = THREE.NearestFilter;
+    vertexTexture.needsUpdate = true;
+    fillTexture(Array.from(vertices), Array.from(indices), vertexTexture, mesh);
+
+    // Output
+    const gpuCompute = new THREE.GPUComputationRenderer(dim, dim, this.renderer);
+    const trianglesVariable = gpuCompute.addVariable('vertexTexture', clippingFrag, vertexTexture);
     gpuCompute.setVariableDependencies(trianglesVariable, [trianglesVariable]);
+    const uniforms = trianglesVariable.material.uniforms;
+    uniforms['dim'] = { value: dim };
 
     const error = gpuCompute.init();
+
+    let start = performance.now();
 
     if (error !== null) {
       console.error(error);
@@ -121,8 +129,6 @@ export class World {
       plane.scale.setScalar(10000);
       plane.position.x -= 5250;
       this.scene.add(plane);
-
-      // console.log(gpuCompute.getCurrentRenderTarget(trianglesVariable).texture);
     }
 
     let end = performance.now();
@@ -135,7 +141,10 @@ export class World {
     end = performance.now();
     console.log(`Execution time: ${end - start} ms`);
 
+    start = performance.now();
     const segments = getTrianglePlaneSegments(mesh, intersectingTriangles, this.plane);
+    end = performance.now();
+    console.log(`Execution time: ${end - start} ms`);
 
     if (segments.length) {
       const loops = getLoopsInSegments(segments);
@@ -461,14 +470,14 @@ function nextPow2(num: number) {
   return num;
 }
 
-function fillTexture(vertices: number[], indices: number[], texture: THREE.DataTexture) {
+function fillTexture(vertices: number[], indices: number[], texture: THREE.DataTexture, mesh: THREE.Mesh) {
   const data = texture.image.data;
   for (let i = 0; i < indices.length; i++) {
-    const idx = indices[i];
-    data[i + 0] = vertices[idx + 0];
-    data[i + 1] = vertices[idx + 1];
-    data[i + 2] = vertices[idx + 2];
-    data[i + 3] = 1;
+    const idx = indices[i] * 3;
+    data[i * 4 + 0] = vertices[idx + 0];
+    data[i * 4 + 1] = vertices[idx + 1];
+    data[i * 4 + 2] = vertices[idx + 2];
+    data[i * 4 + 3] = 1;
   }
 }
 
