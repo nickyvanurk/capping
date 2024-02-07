@@ -108,6 +108,20 @@ export class World {
       gpuCompute.compute();
       const resultTexture = gpuCompute.getCurrentRenderTarget(trianglesVariable).texture;
 
+      let geometry = new THREE.PlaneGeometry(1, 1);
+      let material = new THREE.MeshBasicMaterial({ map: vertexTexture, side: THREE.DoubleSide });
+      let plane = new THREE.Mesh(geometry, material);
+      plane.scale.setScalar(10000);
+      plane.position.x += 5250;
+      this.scene.add(plane);
+
+      geometry = new THREE.PlaneGeometry(1, 1);
+      material = new THREE.MeshBasicMaterial({ map: resultTexture, side: THREE.DoubleSide });
+      plane = new THREE.Mesh(geometry, material);
+      plane.scale.setScalar(10000);
+      plane.position.x -= 5250;
+      this.scene.add(plane);
+
       // console.log(gpuCompute.getCurrentRenderTarget(trianglesVariable).texture);
     }
 
