@@ -1,5 +1,6 @@
 import { resolve } from 'path';
 import { defineConfig } from 'vite';
+import glsl from 'vite-plugin-glsl';
 
 export default defineConfig({
   resolve: {
@@ -12,6 +13,7 @@ export default defineConfig({
   },
 
   define: { global: 'window' },
+  plugins: [glsl()],
   base: './',
 
   build: {

@@ -1,6 +1,7 @@
 import * as THREE from '@viewer/libs/three';
 import isPointInPolygon from 'robust-point-in-polygon';
 
+import clippingVert from './clipping.vs';
 import { Environment } from './environment';
 
 export class World {
@@ -86,22 +87,41 @@ export class World {
   }
 
   generateLines(mesh: THREE.Mesh) {
+    let start = performance.now();
+
     const indices = mesh.geometry.getIndex()!.array;
     const textureSize = nextPow2(Math.sqrt(indices.length));
-
     const gpuCompute = new THREE.GPUComputationRenderer(textureSize, textureSize, this.renderer);
 
     const vertices = mesh.geometry.getAttribute('position').array;
     const vertexTexture = gpuCompute.createTexture();
     fillTexture(Array.from(vertices), Array.from(indices), vertexTexture);
 
+    const trianglesVariable = gpuCompute.addVariable('vertexTexture', clippingVert, vertexTexture);
+    gpuCompute.setVariableDependencies(trianglesVariable, [trianglesVariable]);
+
+    const error = gpuCompute.init();
+
+    if (error !== null) {
+      console.error(error);
+    } else {
+      gpuCompute.compute();
+      const resultTexture = gpuCompute.getCurrentRenderTarget(trianglesVariable).texture;
+
+      // console.log(gpuCompute.getCurrentRenderTarget(trianglesVariable).texture);
+    }
+
+    let end = performance.now();
+    console.log(`Execution time: ${end - start} ms`);
+
     const geometryArray: THREE.BufferGeometry[] = [];
 
-    // const start = performance.now();
+    start = performance.now();
     const intersectingTriangles = getTrianglesIntersectingPlane(mesh, this.plane);
+    end = performance.now();
+    console.log(`Execution time: ${end - start} ms`);
+
     const segments = getTrianglePlaneSegments(mesh, intersectingTriangles, this.plane);
-    // const end = performance.now();
-    // console.log(`Execution time: ${end - start} ms`);
 
     if (segments.length) {
       const loops = getLoopsInSegments(segments);

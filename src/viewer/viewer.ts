@@ -79,7 +79,7 @@ export class Viewer {
 
     resources.on('loaded', () => this.init());
 
-    const world = new World(config, renderer);
+    const world = new World(config, renderer.instance);
     this.world = world;
   }
 
