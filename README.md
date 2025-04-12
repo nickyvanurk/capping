@@ -1,9 +1,8 @@
 # Capping
 
-Geometric algorithm implementation for clipping and capping solid
-triangle meshes. See [this](https://www.scitepress.org/papers/2017/60972/60972.pdf) for more information.
+This project implements an efficient algorithm for clipping and capping solid triangle meshes, based on the approach described in this [paper](docs/paper.pdf).
 
-![](docs/screenshot.png)
+![Screenshot](docs/screenshot.png)
 
 ## Getting Started
 
