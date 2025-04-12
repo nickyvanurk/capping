@@ -3,6 +3,8 @@
 Geometric algorithm implementation for clipping and capping solid
 triangle meshes. See [this](https://www.scitepress.org/papers/2017/60972/60972.pdf) for more information.
 
+![](docs/screenshot.png)
+
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine.
